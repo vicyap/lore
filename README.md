@@ -2,6 +2,10 @@
 
 Capture *why* code was written, not just what changed.
 
+```bash
+go install github.com/vicyap/lore/cmd/lore@latest
+```
+
 lore is a Claude Code hook that distills structured decision reasoning from agent sessions and stores it as git notes alongside your commits. Full session transcripts are preserved on a separate branch for deep investigation.
 
 Inspired by:
