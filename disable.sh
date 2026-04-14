@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# pith/disable.sh — remove pith hooks + skill from the current project
+# lore/disable.sh — remove lore hooks + skill from the current project
 #
-# Usage: ~/.pith/disable.sh
+# Usage: ~/.lore/disable.sh
 #
 # Run from the root of a git repository. This script:
-#   1. Removes the pith hook from .claude/settings.json
-#   2. Removes the /pith skill symlink
+#   1. Removes the lore hook from .claude/settings.json
+#   2. Removes the /lore skill symlink
 #   3. Removes the git notes display config
 #
-# Does NOT delete the pith/transcripts branch or existing git notes.
+# Does NOT delete the lore/transcripts branch or existing git notes.
 # Those are your data — delete them manually if you want.
 
 set -euo pipefail
@@ -22,7 +22,7 @@ fi
 repo_root=$(git rev-parse --show-toplevel)
 cd "$repo_root"
 
-echo "Disabling pith in $(basename "$repo_root")..."
+echo "Disabling lore in $(basename "$repo_root")..."
 
 # ---------------------------------------------------------------------------
 # 1. Remove hook from .claude/settings.json
@@ -36,7 +36,7 @@ if [[ -f "$settings_file" ]]; then
         jq '
             .hooks.PostToolUse = [
                 .hooks.PostToolUse[]
-                | select(.hooks | all(.command != "~/.pith/scripts/pith-hook.sh"))
+                | select(.hooks | all(.command != "~/.lore/scripts/lore-hook.sh"))
             ] |
             if .hooks.PostToolUse == [] then del(.hooks.PostToolUse) else . end |
             if .hooks == {} then del(.hooks) else . end
@@ -44,7 +44,7 @@ if [[ -f "$settings_file" ]]; then
         mv -f "$tmp" "$settings_file"
         echo "  Hook removed from $settings_file"
     else
-        echo "  No pith hook found in $settings_file"
+        echo "  No lore hook found in $settings_file"
     fi
 else
     echo "  No $settings_file found"
@@ -55,7 +55,7 @@ fi
 # ---------------------------------------------------------------------------
 
 for skills_dir in ".claude/skills" ".agents/skills"; do
-    skill_target="$skills_dir/pith"
+    skill_target="$skills_dir/lore"
     if [[ -e "$skill_target" ]] || [[ -L "$skill_target" ]]; then
         rm -rf "$skill_target"
         echo "  Skill removed: $skill_target"
@@ -66,14 +66,14 @@ done
 # 3. Remove git notes display config
 # ---------------------------------------------------------------------------
 
-if git config --get-all notes.displayRef 2>/dev/null | grep -q "refs/notes/pith"; then
-    git config --unset notes.displayRef refs/notes/pith 2>/dev/null || true
+if git config --get-all notes.displayRef 2>/dev/null | grep -q "refs/notes/lore"; then
+    git config --unset notes.displayRef refs/notes/lore 2>/dev/null || true
     echo "  Git notes display config removed"
 fi
 
 echo ""
-echo "pith disabled. Existing notes and transcripts are preserved."
+echo "lore disabled. Existing notes and transcripts are preserved."
 echo ""
-echo "To delete all pith data:"
-echo "  git notes --ref=pith prune"
-echo "  git branch -D pith/transcripts"
+echo "To delete all lore data:"
+echo "  git notes --ref=lore prune"
+echo "  git branch -D lore/transcripts"

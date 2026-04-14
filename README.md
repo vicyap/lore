@@ -1,84 +1,88 @@
-# pith
+# lore
 
 Capture *why* code was written, not just what changed.
 
-pith is a Claude Code hook that distills structured decision reasoning from agent sessions and stores it as git notes alongside your commits. Full session transcripts are preserved on a separate branch for deep investigation.
+lore is a Claude Code hook that distills structured decision reasoning from agent sessions and stores it as git notes alongside your commits. Full session transcripts are preserved on a separate branch for deep investigation.
+
+Inspired by:
+- [Lore: Repurposing Git Commit Messages as a Structured Knowledge Protocol for AI Coding Agents](https://arxiv.org/abs/2603.15566) (Stetsenko, 2026) — introduces the "Decision Shadow" concept and the idea of encoding constraints, rejected alternatives, and directives alongside commits
+- [Entire CLI](https://github.com/entireio/cli) — a Git-integrated tool that captures AI agent session transcripts on a separate branch, keeping your main history clean
 
 **Progressive disclosure:**
 - `git log` — clean history, no noise
-- `git log --notes=pith` — structured reasoning per commit
-- `git show pith/transcripts:transcripts/<session>.jsonl` — full transcript
+- `git log --notes=lore` — structured reasoning per commit
+- `git show lore/transcripts:transcripts/<session>.jsonl` — full transcript
 
 ## How it works
 
 ```
 Claude Code session
-  │
-  ├─ You work, agent writes code
-  │
-  ├─ git commit
-  │   └─ PostToolUse hook fires
-  │       ├─ Capture: full transcript → pith/transcripts branch
-  │       └─ Distill: transcript + diff → claude CLI → git note
-  │
-  └─ git log --notes=pith
-      └─ Structured reasoning: intent, constraints,
+  |
+  +- You work, agent writes code
+  |
+  +- git commit
+  |   +- PostToolUse hook fires
+  |       +- Capture: full transcript -> lore/transcripts branch
+  |       +- Distill: transcript + diff -> claude CLI -> git note
+  |
+  +- git log --notes=lore
+      +- Structured reasoning: intent, constraints,
          rejected alternatives, directives
 ```
 
 ## Install
 
 ```bash
-git clone https://github.com/vicyap/pith ~/.pith
+git clone https://github.com/vicyap/lore ~/.lore
 ```
 
 ## Enable in a project
 
 ```bash
 cd your-project
-~/.pith/enable.sh
+~/.lore/enable.sh
 ```
 
-This adds a PostToolUse hook to `.claude/settings.json` and links the `/pith` skill.
+This adds a PostToolUse hook to `.claude/settings.json` and links the `/lore` skill.
 
 ## Disable
 
 ```bash
 cd your-project
-~/.pith/disable.sh
+~/.lore/disable.sh
 ```
 
 Existing notes and transcripts are preserved.
 
 ## Usage
 
-Once enabled, pith runs automatically on every `git commit` made during a Claude Code session. No action needed.
+Once enabled, lore runs automatically on every `git commit` made during a Claude Code session. No action needed.
 
 ### View decision notes
 
 ```bash
 # Recent commits with reasoning
-git log --notes=pith
+git log --notes=lore
 
 # Specific commit
-git notes --ref=pith show <hash>
+git notes --ref=lore show <hash>
 ```
 
 ### Interactive (in Claude Code)
 
 ```
-/pith show          # last 5 commits with notes
-/pith show abc123   # specific commit
-/pith transcript    # full session transcript
-/pith push          # push notes + transcripts to remote
-/pith status        # check if pith is enabled
+/lore show          # last 5 commits with notes
+/lore show abc123   # specific commit
+/lore transcript    # full session transcript
+/lore push          # push notes + transcripts to remote
+/lore status        # check if lore is enabled
 ```
 
 ### Push to remote
 
 ```bash
-git push origin refs/notes/pith
-git push origin pith/transcripts
+git push origin refs/notes/lore
+git push origin lore/transcripts
 ```
 
 ## What gets captured
@@ -115,11 +119,11 @@ Environment variables:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `PITH_DIR` | `~/.pith` | pith installation directory |
-| `PITH_MODEL` | `sonnet` | Claude model for distillation |
-| `PITH_MAX_DIFF_CHARS` | `20000` | Max diff size sent to distillation |
-| `PITH_MAX_TRANSCRIPT_CHARS` | `50000` | Max transcript window size |
-| `PITH_DEBUG` | (unset) | Set to `1` for debug logging |
+| `LORE_DIR` | `~/.lore` | lore installation directory |
+| `LORE_MODEL` | `sonnet` | Claude model for distillation |
+| `LORE_MAX_DIFF_CHARS` | `20000` | Max diff size sent to distillation |
+| `LORE_MAX_TRANSCRIPT_CHARS` | `50000` | Max transcript window size |
+| `LORE_DEBUG` | (unset) | Set to `1` for debug logging |
 
 ## Dependencies
 
@@ -130,10 +134,15 @@ Environment variables:
 
 ## How it stores data
 
-- **Decision notes**: `refs/notes/pith` — git notes attached to commits. Not visible in `git log` by default; opt-in with `--notes=pith`.
-- **Transcripts**: `pith/transcripts` orphan branch — one JSONL file per session. Written via git plumbing (no checkout needed).
+- **Decision notes**: `refs/notes/lore` — git notes attached to commits. Not visible in `git log` by default; opt-in with `--notes=lore`.
+- **Transcripts**: `lore/transcripts` orphan branch — one JSONL file per session. Written via git plumbing (no checkout needed).
 
 Neither pollutes your commit history or working tree.
+
+## References
+
+- Stetsenko, I. (2026). *Lore: Repurposing Git Commit Messages as a Structured Knowledge Protocol for AI Coding Agents*. [arXiv:2603.15566](https://arxiv.org/abs/2603.15566)
+- [Entire CLI](https://github.com/entireio/cli) — Git-integrated AI session capture
 
 ## License
 
