@@ -1,0 +1,2 @@
+{"type":"user","message":{"content":"What does this project do?"},"uuid":"u1","timestamp":"2026-04-14T10:00:00Z","sessionId":"sess-003"}
+{"type":"assistant","message":{"content":[{"type":"text","text":"This is a Go web application that handles user authentication and notifications."}]},"uuid":"a1","timestamp":"2026-04-14T10:00:05Z","sessionId":"sess-003"}

@@ -1,0 +1,19 @@
+name: Push Lore
+
+on:
+  workflow_call:
+    inputs:
+      remote:
+        type: string
+        default: origin
+
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - run: |
+          git push ${{ inputs.remote }} refs/notes/lore || echo "No lore notes to push"
+          git push ${{ inputs.remote }} lore/transcripts || echo "No transcripts to push"
