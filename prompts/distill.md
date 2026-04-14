@@ -11,7 +11,7 @@ Focus on the "Decision Shadow" — the reasoning that would be lost if only the 
 
 ## Output format
 
-Produce ONLY this markdown structure. No preamble, no commentary outside the structure.
+Produce ONLY this markdown structure. No preamble, no commentary outside the structure. Be succinct, omit needless words.
 
 ```
 ## Intent
