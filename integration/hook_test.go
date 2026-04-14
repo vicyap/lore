@@ -261,3 +261,63 @@ func TestHook_LargeDiff(t *testing.T) {
 		t.Errorf("expected diff truncation message in prompt, got:\n%s", logContent[:min(500, len(logContent))])
 	}
 }
+
+func TestHook_InstructionInStdinNotArgs(t *testing.T) {
+	// Regression test: the distill instruction must be in stdin (combined with
+	// the prompt input), not as a positional CLI arg. When passed as a separate
+	// arg, the model treats stdin as conversation context and echoes transcript
+	// content into the note output.
+	dir := setupRepoWithCommits(t, 1)
+	transcriptPath := copyTranscript(t, "transcript_simple.jsonl")
+
+	logFile := filepath.Join(t.TempDir(), "claude.log")
+	t.Setenv("FAKECLAUDE_LOG", logFile)
+
+	payload := buildHookPayload("sess-regression", transcriptPath, dir, `git commit -m "test"`)
+	runLoreWithStdin(t, dir, payload, "hook")
+
+	logContent := readFile(t, logFile)
+
+	// The instruction should appear in STDIN, not in ARGS
+	if !strings.Contains(logContent, "STDIN:\n") {
+		t.Fatal("expected STDIN section in log")
+	}
+
+	stdinStart := strings.Index(logContent, "STDIN:\n") + len("STDIN:\n")
+	stdinContent := logContent[stdinStart:]
+
+	if !strings.Contains(stdinContent, "Distill the decision reasoning") {
+		t.Error("distill instruction should be in stdin, not as a CLI arg")
+	}
+
+	argsLine := strings.SplitN(logContent, "\n", 2)[0]
+	if strings.Contains(argsLine, "Distill") {
+		t.Error("distill instruction should NOT be in CLI args")
+	}
+}
+
+func TestHook_NoteStartsWithSchema(t *testing.T) {
+	// Regression test: the written note must start with "## Intent" (the first
+	// section of the distill schema). If the model echoes transcript content
+	// before the schema, this test catches it.
+	dir := setupRepoWithCommits(t, 1)
+	transcriptPath := copyTranscript(t, "transcript_simple.jsonl")
+	commitHash := getHeadHash(t, dir)
+
+	payload := buildHookPayload("sess-schema", transcriptPath, dir, `git commit -m "test"`)
+	runLoreWithStdin(t, dir, payload, "hook")
+
+	note := runCmdOutput(t, dir, "git", "notes", "--ref=lore", "show", commitHash)
+	note = strings.TrimSpace(note)
+
+	if !strings.HasPrefix(note, "## Intent") {
+		t.Errorf("note should start with '## Intent', got:\n%s", note[:min(200, len(note))])
+	}
+
+	// Note should not contain transcript markers
+	for _, marker := range []string{"**User:**", "**Assistant:**", "[Tool:"} {
+		if strings.Contains(note, marker) {
+			t.Errorf("note should not contain transcript marker %q", marker)
+		}
+	}
+}

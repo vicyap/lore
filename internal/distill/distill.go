@@ -108,12 +108,12 @@ Session: %s
 }
 
 func runClaude(model, systemPromptFile, input string) (string, error) {
+	fullInput := input + "\n\nDistill the decision reasoning for this commit."
 	cmd := exec.Command("claude", "-p",
 		"--model", model,
 		"--system-prompt-file", systemPromptFile,
-		"Distill the decision reasoning for this commit.",
 	)
-	cmd.Stdin = strings.NewReader(input)
+	cmd.Stdin = strings.NewReader(fullInput)
 	out, err := cmd.Output()
 	if err != nil {
 		return "", fmt.Errorf("claude CLI: %w", err)
