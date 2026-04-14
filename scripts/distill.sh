@@ -55,9 +55,8 @@ ${transcript_window}"
 lore_debug "Distilling reasoning for commit=$commit_hash (model=$LORE_MODEL)"
 
 # Call claude CLI for distillation
-# --bare: skip hooks (prevents recursion), skip CLAUDE.md, skip plugins
 # -p: print mode (non-interactive, stdout only)
-distilled=$(echo "$prompt_input" | claude -p --bare --model "$LORE_MODEL" \
+distilled=$(echo "$prompt_input" | claude -p --model "$LORE_MODEL" \
     --system-prompt-file "$LORE_DIR/prompts/distill.md" \
     "Distill the decision reasoning for this commit." 2>/dev/null) || {
     lore_error "Claude CLI distillation failed"
