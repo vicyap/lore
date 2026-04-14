@@ -28,6 +28,7 @@ are preserved on a separate branch for deep investigation.`,
 		exportCmd(),
 		disableCmd(),
 		browseCmd(),
+		updateCmd(),
 	)
 
 	if err := rootCmd.Execute(); err != nil {
