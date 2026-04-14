@@ -12,7 +12,7 @@
 #         "matcher": "Bash",
 #         "hooks": [{
 #           "type": "command",
-#           "if": "Bash(git commit*)",
+#           "if": "Bash(*git commit*)",
 #           "command": "~/.lore/scripts/lore-hook.sh",
 #           "timeout": 120,
 #           "statusMessage": "lore: distilling reasoning..."
@@ -37,7 +37,7 @@ tool_command=$(lore_parse_field "$input" '.tool_input.command')
 
 # Defense in depth — the "if" filter should already handle this,
 # but verify we're looking at a git commit
-if [[ ! "$tool_command" =~ ^git\ commit ]]; then
+if [[ ! "$tool_command" =~ git\ commit ]]; then
     exit 0
 fi
 

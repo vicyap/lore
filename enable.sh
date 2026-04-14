@@ -44,7 +44,7 @@ lore_hook='{
   "hooks": [
     {
       "type": "command",
-      "if": "Bash(git commit*)",
+      "if": "Bash(*git commit*)",
       "command": "~/.lore/scripts/lore-hook.sh",
       "timeout": 120,
       "statusMessage": "lore: distilling reasoning..."
