@@ -3,7 +3,7 @@
 Capture *why* code was written, not just what changed.
 
 ```bash
-go install github.com/vicyap/lore/cmd/lore@latest
+curl -fsSL https://raw.githubusercontent.com/vicyap/lore/main/install.sh | sh
 ```
 
 lore is a Claude Code hook that distills structured decision reasoning from agent sessions and stores it as git notes alongside your commits. Full session transcripts are preserved on a separate branch for deep investigation.
@@ -36,15 +36,17 @@ Claude Code session
 
 ## Install
 
+### From releases (recommended)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/vicyap/lore/main/install.sh | sh
+```
+
 ### From source
 
 ```bash
 go install github.com/vicyap/lore/cmd/lore@latest
 ```
-
-### From releases
-
-Download the binary for your platform from [GitHub Releases](https://github.com/vicyap/lore/releases).
 
 ## Enable in a project
 
