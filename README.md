@@ -2,15 +2,7 @@
 
 Capture *why* code was written, not just what changed.
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/vicyap/lore/main/install.sh | sh
-```
-
 lore is a Claude Code hook that distills structured decision reasoning from agent sessions and stores it as git notes alongside your commits. Full session transcripts are preserved on a separate branch for deep investigation.
-
-Inspired by:
-- [Lore: Repurposing Git Commit Messages as a Structured Knowledge Protocol for AI Coding Agents](https://arxiv.org/abs/2603.15566) (Stetsenko, 2026) -- introduces the "Decision Shadow" concept and the idea of encoding constraints, rejected alternatives, and directives alongside commits
-- [Entire CLI](https://github.com/entireio/cli) -- a Git-integrated tool that captures AI agent session transcripts on a separate branch, keeping your main history clean
 
 **Progressive disclosure:**
 - `git log` -- clean history, no noise
@@ -36,17 +28,11 @@ Claude Code session
 
 ## Install
 
-### From releases (recommended)
-
 ```bash
 curl -fsSL https://raw.githubusercontent.com/vicyap/lore/main/install.sh | sh
 ```
 
-### From source
-
-```bash
-go install github.com/vicyap/lore/cmd/lore@latest
-```
+Or from source: `go install github.com/vicyap/lore/cmd/lore@latest`
 
 ## Enable in a project
 
@@ -103,26 +89,26 @@ Each commit gets a structured note:
 
 ```markdown
 ## Intent
-Refactor Slack notification to fire on medication-change events
-instead of request-status-change events.
+Refactor notification service to fire on order-status events
+instead of request-lifecycle events.
 
 ## Constraints
-- Slack service must not import from request flow (architectural boundary)
-- Notification must fire exactly once per medication change
+- Notification service must not import from request flow (architectural boundary)
+- Each status change must trigger exactly one notification
 
 ## Rejected Alternatives
-- Polling approach -- miss rapid sequential changes, adds latency
+- Polling approach -- misses rapid sequential changes, adds latency
 - Inline notification in action handler -- couples action to notification
 
 ## Directives
-- If adding new Slack notifications, follow event-driven pattern
-- The medication_changed event shape is canonical
+- If adding new notifications, follow event-driven pattern
+- The order_status_changed event shape is canonical
 
 ## Confidence
 high
 
 ## Session
-abc123-def456 | victor/USE-42-slack-fix
+abc123-def456 | feature/order-notifications
 ```
 
 ## Configuration
@@ -132,8 +118,6 @@ Environment variables:
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `LORE_MODEL` | `sonnet` | Claude model for distillation |
-| `LORE_MAX_DIFF_CHARS` | `20000` | Max diff size sent to distillation |
-| `LORE_MAX_TRANSCRIPT_CHARS` | `50000` | Max transcript window size |
 | `LORE_DEBUG` | (unset) | Set to `1` for debug logging |
 
 ## Dependencies

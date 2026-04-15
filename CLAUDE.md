@@ -58,7 +58,7 @@ Go CLI built with cobra. The hook fires on `git commit` during a Claude Code ses
 
 ## Configuration
 
-Environment variables: `LORE_MODEL` (distillation model, default `sonnet`), `LORE_MAX_DIFF_CHARS` (20000), `LORE_MAX_TRANSCRIPT_CHARS` (50000), `LORE_DEBUG` (set to `1` for debug logging).
+Environment variables: `LORE_MODEL` (distillation model, default `sonnet`), `LORE_DEBUG` (set to `1` for debug logging).
 
 ## Conventions
 

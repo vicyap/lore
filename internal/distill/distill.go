@@ -22,9 +22,9 @@ func Run(cfg config.Config, transcriptPath, sessionID, commitHash string) error 
 	}
 
 	// Truncate diff if too large
-	if len(diffContent) > cfg.MaxDiffChars {
-		diffContent = diffContent[:cfg.MaxDiffChars] +
-			fmt.Sprintf("\n...(diff truncated at %d chars)...", cfg.MaxDiffChars)
+	if len(diffContent) > config.MaxDiffChars {
+		diffContent = diffContent[:config.MaxDiffChars] +
+			fmt.Sprintf("\n...(diff truncated at %d chars)...", config.MaxDiffChars)
 	}
 
 	// Extract transcript window
@@ -32,7 +32,7 @@ func Run(cfg config.Config, transcriptPath, sessionID, commitHash string) error 
 	if err != nil {
 		return fmt.Errorf("parse transcript: %w", err)
 	}
-	transcriptWindow := transcript.ExtractWindow(entries, cfg.MaxTranscriptChars)
+	transcriptWindow := transcript.ExtractWindow(entries, config.MaxTranscriptChars)
 
 	// Get metadata
 	branchName := git.GetBranchName()

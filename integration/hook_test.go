@@ -1,10 +1,13 @@
 package integration
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/vicyap/lore/internal/config"
 )
 
 func TestHook_SimpleCommit(t *testing.T) {
@@ -237,8 +240,8 @@ func TestHook_CustomModel(t *testing.T) {
 func TestHook_LargeDiff(t *testing.T) {
 	dir := setupTestRepo(t)
 
-	// Create a large file to generate a big diff
-	bigContent := strings.Repeat("// line of code\n", 2000)
+	// Create a file large enough to exceed config.MaxDiffChars (200000)
+	bigContent := strings.Repeat("// this is a line of generated code for testing truncation behavior\n", 10000)
 	writeFile(t, dir, "big.go", "package main\n\n"+bigContent)
 	runCmd(t, dir, "git", "add", "big.go")
 	runCmd(t, dir, "git", "commit", "-m", "add big file")
@@ -247,7 +250,6 @@ func TestHook_LargeDiff(t *testing.T) {
 
 	logFile := filepath.Join(t.TempDir(), "claude.log")
 	t.Setenv("FAKECLAUDE_LOG", logFile)
-	t.Setenv("LORE_MAX_DIFF_CHARS", "1000")
 
 	payload := buildHookPayload("sess-010", transcriptPath, dir, `git commit -m "big"`)
 	_, _, exitCode := runLoreWithStdin(t, dir, payload, "hook")
@@ -257,7 +259,8 @@ func TestHook_LargeDiff(t *testing.T) {
 	}
 
 	logContent := readFile(t, logFile)
-	if !strings.Contains(logContent, "diff truncated at 1000 chars") {
+	truncMsg := fmt.Sprintf("diff truncated at %d chars", config.MaxDiffChars)
+	if !strings.Contains(logContent, truncMsg) {
 		t.Errorf("expected diff truncation message in prompt, got:\n%s", logContent[:min(500, len(logContent))])
 	}
 }

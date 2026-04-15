@@ -1,35 +1,32 @@
 package config
 
-import (
-	"os"
-	"strconv"
-)
+import "os"
 
 const (
-	DefaultModel             = "sonnet"
-	DefaultMaxDiffChars      = 20000
-	DefaultMaxTranscriptChars = 50000
-	DefaultNotesRef          = "lore"
-	DefaultBranch            = "lore/transcripts"
+	DefaultModel    = "sonnet"
+	DefaultNotesRef = "lore"
+	DefaultBranch   = "lore/transcripts"
+
+	// Internal truncation limits — not user-configurable.
+	// Generous given 1M-token context windows on Claude Opus 4.6 and
+	// Sonnet 4.6 as of April 15, 2026.
+	MaxDiffChars       = 200000
+	MaxTranscriptChars = 500000
 )
 
 type Config struct {
-	Model             string
-	MaxDiffChars      int
-	MaxTranscriptChars int
-	NotesRef          string
-	Branch            string
-	Debug             bool
+	Model    string
+	NotesRef string
+	Branch   string
+	Debug    bool
 }
 
 func Load() Config {
 	return Config{
-		Model:             envOrDefault("LORE_MODEL", DefaultModel),
-		MaxDiffChars:      envIntOrDefault("LORE_MAX_DIFF_CHARS", DefaultMaxDiffChars),
-		MaxTranscriptChars: envIntOrDefault("LORE_MAX_TRANSCRIPT_CHARS", DefaultMaxTranscriptChars),
-		NotesRef:          DefaultNotesRef,
-		Branch:            DefaultBranch,
-		Debug:             os.Getenv("LORE_DEBUG") == "1",
+		Model:    envOrDefault("LORE_MODEL", DefaultModel),
+		NotesRef: DefaultNotesRef,
+		Branch:   DefaultBranch,
+		Debug:    os.Getenv("LORE_DEBUG") == "1",
 	}
 }
 
@@ -38,16 +35,4 @@ func envOrDefault(key, fallback string) string {
 		return value
 	}
 	return fallback
-}
-
-func envIntOrDefault(key string, fallback int) int {
-	raw := os.Getenv(key)
-	if raw == "" {
-		return fallback
-	}
-	value, err := strconv.Atoi(raw)
-	if err != nil {
-		return fallback
-	}
-	return value
 }
