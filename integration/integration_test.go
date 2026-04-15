@@ -110,7 +110,7 @@ func setupRepoWithNotes(t *testing.T, count int) string {
 	hashes := strings.Split(strings.TrimSpace(out), "\n")
 
 	for idx, hash := range hashes {
-		note := fmt.Sprintf("## Intent\nTest note %d\n\n## Confidence\nhigh\n\n## Session\nsess-%d | main", idx, idx)
+		note := fmt.Sprintf("## Decisions\n- Test decision %d\n\n## Metadata\n- version: dev\n- confidence: high\n- session: sess-%d\n- transcript: abc123\n- branch: main", idx, idx)
 		runCmd(t, dir, "git", "notes", "--ref=lore", "add", "-m", note, hash)
 	}
 

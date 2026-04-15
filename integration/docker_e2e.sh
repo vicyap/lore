@@ -74,17 +74,17 @@ echo ""
 
 # Check for expected sections
 NOTE=$(git notes --ref=lore show HEAD 2>/dev/null || true)
-if echo "$NOTE" | grep -q "## Intent"; then
-    echo "  ## Intent: FOUND"
+if echo "$NOTE" | grep -q "## Decisions"; then
+    echo "  ## Decisions: FOUND"
 else
-    echo "  ## Intent: MISSING"
+    echo "  ## Decisions: MISSING"
     exit 1
 fi
 
-if echo "$NOTE" | grep -q "## Confidence"; then
-    echo "  ## Confidence: FOUND"
+if echo "$NOTE" | grep -q "## Metadata"; then
+    echo "  ## Metadata: FOUND"
 else
-    echo "  ## Confidence: MISSING"
+    echo "  ## Metadata: MISSING"
     exit 1
 fi
 

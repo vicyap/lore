@@ -52,7 +52,7 @@ func TestMergeNotes_AggregatesMultipleNotes(t *testing.T) {
 		t.Fatalf("expected at least 3 notes, got %d", len(noteContents))
 	}
 	for idx, note := range noteContents {
-		if !strings.Contains(note, "## Intent") {
+		if !strings.Contains(note, "## Decisions") {
 			t.Errorf("note %d should contain ## Intent, got: %s", idx, note)
 		}
 	}

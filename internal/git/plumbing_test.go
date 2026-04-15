@@ -84,8 +84,12 @@ func TestOrphanWriteAndReadFile(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := OrphanWriteFile(branch, "transcripts/sess-001.jsonl", sourceFile, "test commit"); err != nil {
+	commitHash, err := OrphanWriteFile(branch, "transcripts/sess-001.jsonl", sourceFile, "test commit")
+	if err != nil {
 		t.Fatalf("OrphanWriteFile: %v", err)
+	}
+	if commitHash == "" {
+		t.Fatal("OrphanWriteFile returned empty commit hash")
 	}
 
 	// Read it back
@@ -120,7 +124,7 @@ func TestOrphanWriteMultipleFiles(t *testing.T) {
 		if err := os.WriteFile(sourceFile, []byte("content of "+name), 0o644); err != nil {
 			t.Fatal(err)
 		}
-		if err := OrphanWriteFile(branch, "data/"+name, sourceFile, "add "+name); err != nil {
+		if _, err := OrphanWriteFile(branch, "data/"+name, sourceFile, "add "+name); err != nil {
 			t.Fatalf("OrphanWriteFile %s: %v", name, err)
 		}
 	}
@@ -160,7 +164,7 @@ func TestOrphanOverwriteFile(t *testing.T) {
 	if err := os.WriteFile(sourceFile, []byte("version 1"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if err := OrphanWriteFile(branch, "data/file.txt", sourceFile, "v1"); err != nil {
+	if _, err := OrphanWriteFile(branch, "data/file.txt", sourceFile, "v1"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -168,7 +172,7 @@ func TestOrphanOverwriteFile(t *testing.T) {
 	if err := os.WriteFile(sourceFile, []byte("version 2"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if err := OrphanWriteFile(branch, "data/file.txt", sourceFile, "v2"); err != nil {
+	if _, err := OrphanWriteFile(branch, "data/file.txt", sourceFile, "v2"); err != nil {
 		t.Fatal(err)
 	}
 

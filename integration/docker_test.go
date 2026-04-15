@@ -45,10 +45,10 @@ func TestDocker_RealClaude(t *testing.T) {
 
 	// Verify output contains expected markers
 	output := string(out)
-	if !strings.Contains(output, "## Intent") {
-		t.Error("expected '## Intent' in docker output")
+	if !strings.Contains(output, "## Decisions") {
+		t.Error("expected '## Decisions' in docker output")
 	}
-	if !strings.Contains(output, "## Confidence") {
-		t.Error("expected '## Confidence' in docker output")
+	if !strings.Contains(output, "## Metadata") {
+		t.Error("expected '## Metadata' in docker output")
 	}
 }

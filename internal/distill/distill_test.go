@@ -13,6 +13,8 @@ func TestBuildPromptInput(t *testing.T) {
 		"sess-001",
 		"diff --git a/login.go\n-old\n+new",
 		"**User:** Fix the login bug",
+		"deadbeef1234",
+		"v0.5.0",
 	)
 
 	// Should contain commit metadata
@@ -22,11 +24,19 @@ func TestBuildPromptInput(t *testing.T) {
 	if !strings.Contains(result, "fix nil pointer") {
 		t.Error("expected commit subject in prompt")
 	}
-	if !strings.Contains(result, "Branch: main") {
-		t.Error("expected branch name in prompt")
+
+	// Should contain metadata fields
+	if !strings.Contains(result, "version: v0.5.0") {
+		t.Error("expected version in prompt")
 	}
-	if !strings.Contains(result, "Session: sess-001") {
+	if !strings.Contains(result, "session: sess-001") {
 		t.Error("expected session ID in prompt")
+	}
+	if !strings.Contains(result, "transcript: deadbeef1234") {
+		t.Error("expected transcript commit hash in prompt")
+	}
+	if !strings.Contains(result, "branch: main") {
+		t.Error("expected branch name in prompt")
 	}
 
 	// Should contain diff
@@ -40,7 +50,7 @@ func TestBuildPromptInput(t *testing.T) {
 	}
 
 	// Should have correct structure
-	sections := []string{"## Commit", "## Diff", "## Transcript"}
+	sections := []string{"## Commit", "## Metadata", "## Diff", "## Transcript"}
 	for _, section := range sections {
 		if !strings.Contains(result, section) {
 			t.Errorf("expected section %q in prompt", section)
@@ -49,7 +59,7 @@ func TestBuildPromptInput(t *testing.T) {
 }
 
 func TestBuildPromptInput_EmptyFields(t *testing.T) {
-	result := BuildPromptInput("", "", "detached", "", "", "(empty transcript)")
+	result := BuildPromptInput("", "", "detached", "", "", "(empty transcript)", "", "")
 
 	// Should still produce valid structure
 	if !strings.Contains(result, "## Commit") {

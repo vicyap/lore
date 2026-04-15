@@ -45,7 +45,7 @@ func TestInstalled_FullCycle(t *testing.T) {
 	if exitCode != 0 {
 		t.Fatalf("show failed: exit %d", exitCode)
 	}
-	if !strings.Contains(stdout, "## Intent") {
+	if !strings.Contains(stdout, "## Decisions") {
 		t.Errorf("expected note in show output, got:\n%s", stdout)
 	}
 
@@ -63,7 +63,7 @@ func TestInstalled_FullCycle(t *testing.T) {
 	if exitCode != 0 {
 		t.Fatalf("export failed: exit %d", exitCode)
 	}
-	if !strings.Contains(stdout, "Intent") {
+	if !strings.Contains(stdout, "Decisions") {
 		t.Errorf("expected note content in export, got:\n%s", stdout)
 	}
 

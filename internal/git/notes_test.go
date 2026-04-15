@@ -17,7 +17,7 @@ func TestWriteAndReadNote(t *testing.T) {
 	}
 
 	notesRef := "lore-test"
-	content := "## Intent\nFix login bug\n\n## Confidence\nhigh"
+	content := "## Decisions\n- Fix login bug\n\n## Metadata\n- confidence: high"
 
 	if err := WriteNote(notesRef, commitHash, content); err != nil {
 		t.Fatalf("WriteNote: %v", err)

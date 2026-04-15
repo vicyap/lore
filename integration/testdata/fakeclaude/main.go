@@ -18,23 +18,16 @@ import (
 	"strings"
 )
 
-const cannedOutput = `## Intent
-Automated test: fix the login handler nil pointer dereference.
+const cannedOutput = `## Decisions
+- Used nil-check guard on user record instead of returning 404 — 404 would be inconsistent with the API contract which returns error objects for all failures
+- Kept existing auth flow unchanged — the fix is scoped to the nil dereference, not a refactor of the handler
 
-## Constraints
-- Must not break existing auth flow
-
-## Rejected Alternatives
-- Returning 404 instead of error -- inconsistent with API contract
-
-## Directives
-- Always nil-check user records before accessing fields
-
-## Confidence
-high
-
-## Session
-test-session | main`
+## Metadata
+- version: dev
+- confidence: high
+- session: test-session
+- transcript: abc123
+- branch: main`
 
 func main() {
 	// Read stdin completely (prevents broken pipe)

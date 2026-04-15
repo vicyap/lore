@@ -22,8 +22,8 @@ Claude Code session
   |       +- Distill: transcript + diff -> claude CLI -> git note
   |
   +- git log --notes=lore
-      +- Structured reasoning: intent, constraints,
-         rejected alternatives, directives
+      +- Structured reasoning: decisions with rationale,
+         metadata
 ```
 
 ## Install
@@ -88,27 +88,17 @@ git push origin lore/transcripts
 Each commit gets a structured note:
 
 ```markdown
-## Intent
-Refactor notification service to fire on order-status events
-instead of request-lifecycle events.
+## Decisions
+- Moved to event-driven notifications over polling — polling misses rapid sequential status changes and adds latency
+- Used order_status_changed event rather than inline notification in action handler — keeps action and notification decoupled across the architectural boundary
+- Each status change triggers exactly one notification — notification service must not import from request flow
 
-## Constraints
-- Notification service must not import from request flow (architectural boundary)
-- Each status change must trigger exactly one notification
-
-## Rejected Alternatives
-- Polling approach -- misses rapid sequential changes, adds latency
-- Inline notification in action handler -- couples action to notification
-
-## Directives
-- If adding new notifications, follow event-driven pattern
-- The order_status_changed event shape is canonical
-
-## Confidence
-high
-
-## Session
-abc123-def456 | feature/order-notifications
+## Metadata
+- version: v0.5.0
+- confidence: high
+- session: abc123-def456
+- transcript: 7e9f2a1b3c4d
+- branch: feature/order-notifications
 ```
 
 ## Configuration

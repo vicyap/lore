@@ -42,30 +42,30 @@ func OrphanInit(branch string) error {
 }
 
 // OrphanWriteFile writes a file to the orphan branch using git plumbing.
-// No checkout or working tree disruption.
-func OrphanWriteFile(branch, filepath, sourceFile, commitMessage string) error {
+// No checkout or working tree disruption. Returns the new commit hash.
+func OrphanWriteFile(branch, filepath, sourceFile, commitMessage string) (string, error) {
 	if err := OrphanInit(branch); err != nil {
-		return err
+		return "", err
 	}
 
 	blobHash, err := runGit("hash-object", "-w", sourceFile)
 	if err != nil {
-		return fmt.Errorf("hash blob: %w", err)
+		return "", fmt.Errorf("hash blob: %w", err)
 	}
 
 	parentCommit, err := runGit("rev-parse", "refs/heads/"+branch)
 	if err != nil {
-		return fmt.Errorf("get parent: %w", err)
+		return "", fmt.Errorf("get parent: %w", err)
 	}
 
 	currentTree, err := runGit("rev-parse", parentCommit+"^{tree}")
 	if err != nil {
-		return fmt.Errorf("get tree: %w", err)
+		return "", fmt.Errorf("get tree: %w", err)
 	}
 
 	tempIndex, err := os.CreateTemp("", "lore-index-*")
 	if err != nil {
-		return fmt.Errorf("create temp index: %w", err)
+		return "", fmt.Errorf("create temp index: %w", err)
 	}
 	tempIndexPath := tempIndex.Name()
 	tempIndex.Close()
@@ -74,19 +74,19 @@ func OrphanWriteFile(branch, filepath, sourceFile, commitMessage string) error {
 
 	// Read existing tree into temp index
 	if err := runGitWithIndex(tempIndexPath, "read-tree", currentTree); err != nil {
-		return fmt.Errorf("read-tree: %w", err)
+		return "", fmt.Errorf("read-tree: %w", err)
 	}
 
 	// Add/update file in temp index
 	cacheInfo := fmt.Sprintf("100644,%s,%s", blobHash, filepath)
 	if err := runGitWithIndex(tempIndexPath, "update-index", "--add", "--cacheinfo", cacheInfo); err != nil {
-		return fmt.Errorf("update-index: %w", err)
+		return "", fmt.Errorf("update-index: %w", err)
 	}
 
 	// Write the new tree
 	newTree, err := runGitWithIndexOutput(tempIndexPath, "write-tree")
 	if err != nil {
-		return fmt.Errorf("write-tree: %w", err)
+		return "", fmt.Errorf("write-tree: %w", err)
 	}
 
 	// Create commit
@@ -100,11 +100,11 @@ func OrphanWriteFile(branch, filepath, sourceFile, commitMessage string) error {
 		"commit-tree", newTree, "-p", parentCommit, "-m", commitMessage,
 	)
 	if err != nil {
-		return fmt.Errorf("commit-tree: %w", err)
+		return "", fmt.Errorf("commit-tree: %w", err)
 	}
 
 	_, err = runGit("update-ref", "refs/heads/"+branch, newCommit)
-	return err
+	return newCommit, err
 }
 
 // OrphanReadFile reads a file from the orphan branch.

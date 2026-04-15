@@ -72,12 +72,13 @@ func runHook(cmd *cobra.Command, args []string) error {
 	logInfo("Processing commit %s (session %s)", commitHash[:12], hook.SessionID[:min(8, len(hook.SessionID))])
 
 	// Step 1: Capture transcript to orphan branch
-	if err := captureTranscript(cfg, hook.TranscriptPath, hook.SessionID, commitHash); err != nil {
+	transcriptCommit, err := captureTranscript(cfg, hook.TranscriptPath, hook.SessionID, commitHash)
+	if err != nil {
 		logError("transcript capture failed (non-fatal): %v", err)
 	}
 
 	// Step 2: Distill reasoning into git note
-	if err := distill.Run(cfg, hook.TranscriptPath, hook.SessionID, commitHash); err != nil {
+	if err := distill.Run(cfg, hook.TranscriptPath, hook.SessionID, commitHash, transcriptCommit, version); err != nil {
 		logError("distillation failed (non-fatal): %v", err)
 	}
 
@@ -85,9 +86,9 @@ func runHook(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func captureTranscript(cfg config.Config, transcriptPath, sessionID, commitHash string) error {
+func captureTranscript(cfg config.Config, transcriptPath, sessionID, commitHash string) (string, error) {
 	if _, err := os.Stat(transcriptPath); os.IsNotExist(err) {
-		return fmt.Errorf("transcript not found: %s", transcriptPath)
+		return "", fmt.Errorf("transcript not found: %s", transcriptPath)
 	}
 
 	filepath := fmt.Sprintf("transcripts/%s.jsonl", sessionID)

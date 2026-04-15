@@ -14,7 +14,7 @@ import (
 
 // Run performs the full distillation pipeline:
 // window transcript, get diff, call claude CLI, write git note.
-func Run(cfg config.Config, transcriptPath, sessionID, commitHash string) error {
+func Run(cfg config.Config, transcriptPath, sessionID, commitHash, transcriptCommit, version string) error {
 	// Get the diff
 	diffContent, err := git.GetDiff(commitHash)
 	if err != nil {
@@ -39,19 +39,8 @@ func Run(cfg config.Config, transcriptPath, sessionID, commitHash string) error 
 	commitSubject, _ := git.GetCommitSubject(commitHash)
 
 	// Build prompt input
-	promptInput := fmt.Sprintf(`## Commit
-%s %s
-Branch: %s
-Session: %s
-
-## Diff
-`+"```diff\n%s\n```"+`
-
-## Transcript (agent session leading to this commit)
-%s`,
-		commitHash[:12], commitSubject, branchName, sessionID,
-		diffContent, transcriptWindow,
-	)
+	promptInput := BuildPromptInput(commitHash, commitSubject, branchName, sessionID,
+		diffContent, transcriptWindow, transcriptCommit, version)
 
 	// Write distill prompt to temp file
 	promptFile, err := os.CreateTemp("", "lore-prompt-*.md")
@@ -70,14 +59,15 @@ Session: %s
 	distilled, err := runClaude(cfg.Model, promptFile.Name(), promptInput)
 	if err != nil {
 		// Write fallback note
-		distilled = fmt.Sprintf(`## Intent
-(distillation failed — claude CLI error)
+		distilled = fmt.Sprintf(`## Decisions
+- (distillation failed — claude CLI error)
 
-## Confidence
-low
-
-## Session
-%s | %s`, sessionID, branchName)
+## Metadata
+- version: %s
+- confidence: low
+- session: %s
+- transcript: %s
+- branch: %s`, version, sessionID, transcriptCommit, branchName)
 	}
 
 	// Skip writing if output is empty (git notes rejects empty content)
@@ -91,18 +81,23 @@ low
 
 // BuildPromptInput constructs the prompt input for distillation.
 // Exported for testing.
-func BuildPromptInput(commitHash, commitSubject, branchName, sessionID, diffContent, transcriptWindow string) string {
+func BuildPromptInput(commitHash, commitSubject, branchName, sessionID, diffContent, transcriptWindow, transcriptCommit, version string) string {
 	return fmt.Sprintf(`## Commit
 %s %s
-Branch: %s
-Session: %s
+
+## Metadata (copy these values exactly into the output Metadata section)
+- version: %s
+- session: %s
+- transcript: %s
+- branch: %s
 
 ## Diff
 `+"```diff\n%s\n```"+`
 
 ## Transcript (agent session leading to this commit)
 %s`,
-		commitHash, commitSubject, branchName, sessionID,
+		commitHash, commitSubject,
+		version, sessionID, transcriptCommit, branchName,
 		diffContent, transcriptWindow,
 	)
 }

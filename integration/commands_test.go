@@ -15,7 +15,7 @@ func TestShow_RecentDefault(t *testing.T) {
 	}
 
 	// Should contain notes
-	if !strings.Contains(stdout, "## Intent") {
+	if !strings.Contains(stdout, "## Decisions") {
 		t.Errorf("expected notes in output, got:\n%s", stdout)
 	}
 }
@@ -30,7 +30,7 @@ func TestShow_WithCount(t *testing.T) {
 	}
 
 	// Count how many note sections appear
-	noteCount := strings.Count(stdout, "## Intent")
+	noteCount := strings.Count(stdout, "## Decisions")
 	if noteCount > 2 {
 		t.Errorf("expected at most 2 notes, got %d", noteCount)
 	}
@@ -46,7 +46,7 @@ func TestShow_SpecificCommit(t *testing.T) {
 		t.Fatalf("expected exit 0, got %d", exitCode)
 	}
 
-	if !strings.Contains(stdout, "## Intent") {
+	if !strings.Contains(stdout, "## Decisions") {
 		t.Errorf("expected note for specific commit, got:\n%s", stdout)
 	}
 }
@@ -61,8 +61,8 @@ func TestShow_NoNotes(t *testing.T) {
 	}
 
 	// When no notes exist, git log --notes=lore still shows commits but with empty note sections.
-	// The output should not contain any "## Intent" sections (which only appear in real notes).
-	if strings.Contains(stdout, "## Intent") {
+	// The output should not contain any "## Decisions" sections (which only appear in real notes).
+	if strings.Contains(stdout, "## Decisions") {
 		t.Errorf("expected no note content, got:\n%s", stdout)
 	}
 }

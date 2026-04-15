@@ -125,44 +125,33 @@ func buildAggregatedNote(notes []aggregatedNote, prNumber int) string {
 
 	var buf strings.Builder
 
-	// Extract and deduplicate sections across all notes
-	allIntents := collectSection(notes, "## Intent")
-	allConstraints := collectSection(notes, "## Constraints")
-	allRejected := collectSection(notes, "## Rejected Alternatives")
-	allDirectives := collectSection(notes, "## Directives")
-	allSessions := collectSection(notes, "## Session")
+	// Collect decisions from all notes
+	allDecisions := collectSection(notes, "## Decisions")
 
-	if len(allIntents) > 0 {
-		buf.WriteString("## Intent\n")
-		buf.WriteString(strings.Join(allIntents, "\n"))
-		buf.WriteString("\n\n")
+	buf.WriteString("## Decisions\n")
+	if len(allDecisions) > 0 {
+		buf.WriteString(strings.Join(dedup(allDecisions), "\n"))
 	}
+	buf.WriteString("\n\n")
 
-	if len(allConstraints) > 0 {
-		buf.WriteString("## Constraints\n")
-		buf.WriteString(strings.Join(dedup(allConstraints), "\n"))
-		buf.WriteString("\n\n")
+	// Metadata — aggregate sessions and transcripts
+	allMetadata := collectSection(notes, "## Metadata")
+
+	buf.WriteString("## Metadata\n")
+	buf.WriteString("- confidence: medium (aggregated from multiple commits)\n")
+	if len(allMetadata) > 0 {
+		// Include all unique metadata lines (sessions, transcripts, etc.)
+		for _, meta := range dedup(allMetadata) {
+			for _, line := range strings.Split(meta, "\n") {
+				line = strings.TrimSpace(line)
+				// Skip confidence lines — we set our own above
+				if line != "" && !strings.HasPrefix(line, "- confidence:") {
+					buf.WriteString(line + "\n")
+				}
+			}
+		}
 	}
-
-	if len(allRejected) > 0 {
-		buf.WriteString("## Rejected Alternatives\n")
-		buf.WriteString(strings.Join(dedup(allRejected), "\n"))
-		buf.WriteString("\n\n")
-	}
-
-	if len(allDirectives) > 0 {
-		buf.WriteString("## Directives\n")
-		buf.WriteString(strings.Join(dedup(allDirectives), "\n"))
-		buf.WriteString("\n\n")
-	}
-
-	buf.WriteString("## Confidence\nmedium (aggregated from multiple commits)\n\n")
-
-	if len(allSessions) > 0 {
-		buf.WriteString("## Session\n")
-		buf.WriteString(strings.Join(dedup(allSessions), "\n"))
-		buf.WriteString("\n\n")
-	}
+	buf.WriteString("\n")
 
 	// Provenance
 	buf.WriteString(fmt.Sprintf("## Provenance\nSquash merge of PR #%d (%d commits):\n", prNumber, len(notes)))

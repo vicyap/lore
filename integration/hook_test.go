@@ -27,7 +27,7 @@ func TestHook_SimpleCommit(t *testing.T) {
 
 	// Note should exist on HEAD
 	assertNoteExists(t, dir, commitHash)
-	assertNoteContains(t, dir, commitHash, "## Intent")
+	assertNoteContains(t, dir, commitHash, "## Decisions")
 
 	// Transcript should be on orphan branch
 	assertOrphanFileExists(t, dir, "lore/transcripts", "transcripts/sess-001.jsonl")
@@ -211,8 +211,8 @@ func TestHook_DetachedHEAD(t *testing.T) {
 	assertNoteExists(t, dir, commitHash)
 
 	logContent := readFile(t, logFile)
-	if !strings.Contains(logContent, "Branch: detached") {
-		t.Errorf("expected 'Branch: detached' in prompt, got:\n%s", logContent)
+	if !strings.Contains(logContent, "branch: detached") {
+		t.Errorf("expected 'branch: detached' in prompt, got:\n%s", logContent)
 	}
 }
 
@@ -300,7 +300,7 @@ func TestHook_InstructionInStdinNotArgs(t *testing.T) {
 }
 
 func TestHook_NoteStartsWithSchema(t *testing.T) {
-	// Regression test: the written note must start with "## Intent" (the first
+	// Regression test: the written note must start with "## Decisions" (the first
 	// section of the distill schema). If the model echoes transcript content
 	// before the schema, this test catches it.
 	dir := setupRepoWithCommits(t, 1)
@@ -313,8 +313,8 @@ func TestHook_NoteStartsWithSchema(t *testing.T) {
 	note := runCmdOutput(t, dir, "git", "notes", "--ref=lore", "show", commitHash)
 	note = strings.TrimSpace(note)
 
-	if !strings.HasPrefix(note, "## Intent") {
-		t.Errorf("note should start with '## Intent', got:\n%s", note[:min(200, len(note))])
+	if !strings.HasPrefix(note, "## Decisions") {
+		t.Errorf("note should start with '## Decisions', got:\n%s", note[:min(200, len(note))])
 	}
 
 	// Note should not contain transcript markers

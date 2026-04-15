@@ -69,10 +69,10 @@ When showing decision notes, display them as-is (they're already markdown). Add 
 ```
 ### abc123def012 — fix medication change Slack notification
 
-## Intent
+## Decisions
 ...
 
-## Constraints
+## Metadata
 ...
 ```
 
