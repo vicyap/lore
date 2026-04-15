@@ -34,8 +34,8 @@ func TestHook_SimpleCommit(t *testing.T) {
 
 	// Fake claude should have been called with correct args
 	logContent := readFile(t, logFile)
-	if !strings.Contains(logContent, "--model sonnet") {
-		t.Errorf("expected --model sonnet in claude log, got:\n%s", logContent)
+	if !strings.Contains(logContent, "--model opus") {
+		t.Errorf("expected --model opus in claude log, got:\n%s", logContent)
 	}
 	if !strings.Contains(logContent, "## Commit") {
 		t.Errorf("expected ## Commit in claude stdin, got:\n%s", logContent)

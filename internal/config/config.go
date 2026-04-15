@@ -3,7 +3,7 @@ package config
 import "os"
 
 const (
-	DefaultModel    = "sonnet"
+	DefaultModel    = "opus"
 	DefaultNotesRef = "lore"
 	DefaultBranch   = "lore/transcripts"
 

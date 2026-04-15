@@ -107,7 +107,7 @@ Environment variables:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `LORE_MODEL` | `sonnet` | Claude model for distillation |
+| `LORE_MODEL` | `opus` | Claude model for distillation |
 | `LORE_DEBUG` | (unset) | Set to `1` for debug logging |
 
 ## Dependencies
