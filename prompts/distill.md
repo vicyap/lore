@@ -40,7 +40,7 @@ Produce ONLY this structure. No preamble, no commentary outside the structure.
 - If the transcript shows clear deliberation (comparing approaches, discussing tradeoffs), extract all of it into Decisions.
 - If the transcript shows a mechanical change with no deliberation, write a single-bullet Decisions section stating that, and set confidence to low.
 - Never invent reasoning that isn't in the transcript. If the reasoning is unclear, say so in the confidence field.
-- Each decision bullet should be self-contained: what was decided, what the alternative was, and why. One to two sentences per bullet.
+- Each decision bullet must be one sentence, two at most. Format: "[Chose X over Y] — [reason]". If you need a second sentence, it should add a constraint or trap, not elaborate on the first. Cut ruthlessly — if a clause doesn't change what a future developer would do, drop it.
 - Do NOT describe the diff contents. The reader can see the diff.
 - Do NOT restate the commit message. The reader can see that too.
 - Do NOT use inflated language (critical, crucial, robust, elegant). Be direct.
