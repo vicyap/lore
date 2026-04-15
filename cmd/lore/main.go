@@ -29,6 +29,7 @@ are preserved on a separate branch for deep investigation.`,
 		disableCmd(),
 		browseCmd(),
 		updateCmd(),
+		mergeNotesCmd(),
 	)
 
 	if err := rootCmd.Execute(); err != nil {

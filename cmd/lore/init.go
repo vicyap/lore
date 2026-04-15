@@ -88,6 +88,15 @@ func runInit(cmd *cobra.Command, args []string) error {
 		}
 	}
 
+	// Ask about GitHub Actions workflow
+	if promptYesNo("Install GitHub Actions workflow? (pushes notes on merge, handles squash merges)", true) {
+		if err := installWorkflow(repoRoot); err != nil {
+			fmt.Fprintf(os.Stderr, "  warning: workflow install failed: %v\n", err)
+		} else {
+			fmt.Println("  Workflow installed at .github/workflows/lore.yml")
+		}
+	}
+
 	fmt.Println()
 	fmt.Println("lore enabled. Decision notes will be captured on every commit.")
 	fmt.Println()
@@ -129,6 +138,21 @@ func installSkill(repoRoot string) error {
 	}
 
 	return os.WriteFile(filepath.Join(skillDir, "lore.md"), skillContent, 0o644)
+}
+
+func installWorkflow(repoRoot string) error {
+	workflowDir := filepath.Join(repoRoot, ".github", "workflows")
+	if err := os.MkdirAll(workflowDir, 0o755); err != nil {
+		return err
+	}
+
+	workflowPath := filepath.Join(workflowDir, "lore.yml")
+	if _, err := os.Stat(workflowPath); err == nil {
+		fmt.Println("  Workflow already exists at .github/workflows/lore.yml")
+		return nil
+	}
+
+	return os.WriteFile(workflowPath, prompts.WorkflowTemplate(), 0o644)
 }
 
 func runGitConfig(args ...string) (string, error) {

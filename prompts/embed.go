@@ -19,3 +19,11 @@ var skillDefinition []byte
 func SkillDefinition() ([]byte, error) {
 	return skillDefinition, nil
 }
+
+//go:embed lore-workflow.yml
+var workflowTemplate []byte
+
+// WorkflowTemplate returns the GitHub Actions workflow YAML.
+func WorkflowTemplate() []byte {
+	return workflowTemplate
+}

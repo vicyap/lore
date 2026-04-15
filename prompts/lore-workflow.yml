@@ -1,0 +1,32 @@
+name: Lore
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  lore:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch lore notes
+        run: git fetch origin refs/notes/lore:refs/notes/lore || true
+
+      - name: Install lore
+        run: curl -fsSL https://raw.githubusercontent.com/vicyap/lore/main/install.sh | sh
+
+      - name: Aggregate squash-merge notes
+        run: lore merge-notes || true
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Push lore data
+        run: |
+          git push origin refs/notes/lore || echo "No lore notes to push"
+          git push origin lore/transcripts || echo "No transcripts to push"
