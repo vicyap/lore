@@ -25,8 +25,7 @@ const cannedOutput = `## Decisions
 ## Metadata
 - version: dev
 - confidence: high
-- session: test-session
-- transcript: abc123
+- transcript-ref: abc123
 - branch: main`
 
 func main() {

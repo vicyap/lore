@@ -96,8 +96,7 @@ Each commit gets a structured note:
 ## Metadata
 - version: v0.5.0
 - confidence: high
-- session: abc123-def456
-- transcript: 7e9f2a1b3c4d
+- transcript-ref: 7e9f2a1b3c4d
 - branch: feature/order-notifications
 ```
 

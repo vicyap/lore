@@ -14,7 +14,7 @@ import (
 
 // Run performs the full distillation pipeline:
 // window transcript, get diff, call claude CLI, write git note.
-func Run(cfg config.Config, transcriptPath, sessionID, commitHash, transcriptCommit, version string) error {
+func Run(cfg config.Config, transcriptPath, commitHash, transcriptCommit, version string) error {
 	// Get the diff
 	diffContent, err := git.GetDiff(commitHash)
 	if err != nil {
@@ -39,7 +39,7 @@ func Run(cfg config.Config, transcriptPath, sessionID, commitHash, transcriptCom
 	commitSubject, _ := git.GetCommitSubject(commitHash)
 
 	// Build prompt input
-	promptInput := BuildPromptInput(commitHash, commitSubject, branchName, sessionID,
+	promptInput := BuildPromptInput(commitHash, commitSubject, branchName,
 		diffContent, transcriptWindow, transcriptCommit, version)
 
 	// Write distill prompt to temp file
@@ -65,9 +65,8 @@ func Run(cfg config.Config, transcriptPath, sessionID, commitHash, transcriptCom
 ## Metadata
 - version: %s
 - confidence: low
-- session: %s
-- transcript: %s
-- branch: %s`, version, sessionID, transcriptCommit, branchName)
+- transcript-ref: %s
+- branch: %s`, version, transcriptCommit, branchName)
 	}
 
 	// Skip writing if output is empty (git notes rejects empty content)
@@ -81,14 +80,13 @@ func Run(cfg config.Config, transcriptPath, sessionID, commitHash, transcriptCom
 
 // BuildPromptInput constructs the prompt input for distillation.
 // Exported for testing.
-func BuildPromptInput(commitHash, commitSubject, branchName, sessionID, diffContent, transcriptWindow, transcriptCommit, version string) string {
+func BuildPromptInput(commitHash, commitSubject, branchName, diffContent, transcriptWindow, transcriptCommit, version string) string {
 	return fmt.Sprintf(`## Commit
 %s %s
 
 ## Metadata (copy these values exactly into the output Metadata section)
 - version: %s
-- session: %s
-- transcript: %s
+- transcript-ref: %s
 - branch: %s
 
 ## Diff
@@ -97,7 +95,7 @@ func BuildPromptInput(commitHash, commitSubject, branchName, sessionID, diffCont
 ## Transcript (agent session leading to this commit)
 %s`,
 		commitHash, commitSubject,
-		version, sessionID, transcriptCommit, branchName,
+		version, transcriptCommit, branchName,
 		diffContent, transcriptWindow,
 	)
 }

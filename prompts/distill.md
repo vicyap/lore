@@ -30,8 +30,7 @@ Produce ONLY this structure. No preamble, no commentary outside the structure.
 ## Metadata
 - version: {version}
 - confidence: [high | medium | low — how clearly the transcript reveals the reasoning]
-- session: {session_id}
-- transcript: {transcript_commit}
+- transcript-ref: {transcript_commit}
 - branch: {branch}
 ```
 
@@ -44,4 +43,4 @@ Produce ONLY this structure. No preamble, no commentary outside the structure.
 - Do NOT describe the diff contents. The reader can see the diff.
 - Do NOT restate the commit message. The reader can see that too.
 - Do NOT use inflated language (critical, crucial, robust, elegant). Be direct.
-- The Metadata section values for version, session, transcript, and branch are provided in the input — copy them exactly.
+- The Metadata section values for version, transcript-ref, and branch are provided in the input — copy them exactly.

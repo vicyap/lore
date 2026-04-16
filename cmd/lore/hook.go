@@ -78,7 +78,7 @@ func runHook(cmd *cobra.Command, args []string) error {
 	}
 
 	// Step 2: Distill reasoning into git note
-	if err := distill.Run(cfg, hook.TranscriptPath, hook.SessionID, commitHash, transcriptCommit, version); err != nil {
+	if err := distill.Run(cfg, hook.TranscriptPath, commitHash, transcriptCommit, version); err != nil {
 		logError("distillation failed (non-fatal): %v", err)
 	}
 

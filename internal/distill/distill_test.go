@@ -10,7 +10,6 @@ func TestBuildPromptInput(t *testing.T) {
 		"abc123def012",
 		"fix nil pointer in login handler",
 		"main",
-		"sess-001",
 		"diff --git a/login.go\n-old\n+new",
 		"**User:** Fix the login bug",
 		"deadbeef1234",
@@ -29,10 +28,7 @@ func TestBuildPromptInput(t *testing.T) {
 	if !strings.Contains(result, "version: v0.5.0") {
 		t.Error("expected version in prompt")
 	}
-	if !strings.Contains(result, "session: sess-001") {
-		t.Error("expected session ID in prompt")
-	}
-	if !strings.Contains(result, "transcript: deadbeef1234") {
+	if !strings.Contains(result, "transcript-ref: deadbeef1234") {
 		t.Error("expected transcript commit hash in prompt")
 	}
 	if !strings.Contains(result, "branch: main") {
@@ -59,7 +55,7 @@ func TestBuildPromptInput(t *testing.T) {
 }
 
 func TestBuildPromptInput_EmptyFields(t *testing.T) {
-	result := BuildPromptInput("", "", "detached", "", "", "(empty transcript)", "", "")
+	result := BuildPromptInput("", "", "detached", "", "(empty transcript)", "", "")
 
 	// Should still produce valid structure
 	if !strings.Contains(result, "## Commit") {
