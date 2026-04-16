@@ -23,7 +23,6 @@ go install ./cmd/lore
 
 # Run the CLI
 go run ./cmd/lore status
-go run ./cmd/lore show
 ```
 
 No external tools beyond `go` are required for development. The project uses Go modules with vendoring disabled.
@@ -65,3 +64,12 @@ Environment variables: `LORE_MODEL` (distillation model, default `opus`), `LORE_
 - Standard Go project layout with `cmd/` and `internal/`.
 - Tests use `t.TempDir()` for git repo fixtures.
 - Git operations that touch the orphan branch must use plumbing commands only -- never `git checkout` or `git stash`.
+
+## Versioning
+
+Semver, with a narrow definition of "minor":
+
+- **Minor** (`v0.X.0`) -- reserved for behavior-changing updates, such as prompt edits that alter distilled output, hook semantics changes, or user-visible CLI behavior changes.
+- **Patch** (`v0.0.X`) -- default for everything else: refactors, bug fixes, docs, tests, internal plumbing, dependency bumps.
+
+When in doubt, bump patch.

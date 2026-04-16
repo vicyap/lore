@@ -41,7 +41,7 @@ cd your-project
 lore init
 ```
 
-This adds a PostToolUse hook to `.claude/settings.json`, creates the orphan branch, configures git notes display, and optionally installs the `/lore` skill for Claude Code.
+This adds a PostToolUse hook to `.claude/settings.json`, creates the orphan branch, and configures git notes display.
 
 ## Disable
 
@@ -59,28 +59,18 @@ Once enabled, lore runs automatically on every `git commit` made during a Claude
 ### CLI commands
 
 ```bash
-lore show            # last 5 commits with notes
-lore show 10         # last 10 commits with notes
-lore show abc123     # specific commit's note
-lore status          # check if lore is enabled
-lore push            # push notes + transcripts to remote
-lore export          # export as JSONL to stdout
+lore status     # check if lore is enabled in this repo
+lore browse     # interactive browser
+lore export     # export as JSONL to stdout
 lore export --format md --output notes.md
-lore browse             # interactive browser
 ```
 
-### Git (works without lore CLI)
+### Using git directly
 
 ```bash
-git log --notes=lore
-git notes --ref=lore show <hash>
-```
-
-### Push to remote
-
-```bash
-git push origin refs/notes/lore
-git push origin lore/transcripts
+git log --notes=lore                              # view notes in log
+git notes --ref=lore show <hash>                  # specific commit's note
+git push origin refs/notes/lore lore/transcripts  # push to remote
 ```
 
 ## What gets captured
@@ -134,6 +124,13 @@ jobs:
   push-lore:
     uses: vicyap/lore/.github/workflows/push-lore.yml@main
 ```
+
+## Versioning
+
+Semver, with a narrow definition of "minor":
+
+- **Minor** (`v0.X.0`) -- behavior-changing updates: prompt edits that alter distilled output, hook semantics changes, or user-visible CLI behavior changes.
+- **Patch** (`v0.0.X`) -- default for everything else: refactors, bug fixes, docs, tests, internal plumbing, dependency bumps.
 
 ## References
 
