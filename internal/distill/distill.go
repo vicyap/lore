@@ -35,11 +35,10 @@ func Run(cfg config.Config, transcriptPath, commitHash, transcriptCommit, versio
 	transcriptWindow := transcript.ExtractWindow(entries, config.MaxTranscriptChars)
 
 	// Get metadata
-	branchName := git.GetBranchName()
 	commitSubject, _ := git.GetCommitSubject(commitHash)
 
 	// Build prompt input
-	promptInput := BuildPromptInput(commitHash, commitSubject, branchName,
+	promptInput := BuildPromptInput(commitHash, commitSubject,
 		diffContent, transcriptWindow, transcriptCommit, version)
 
 	// Write distill prompt to temp file
@@ -65,8 +64,7 @@ func Run(cfg config.Config, transcriptPath, commitHash, transcriptCommit, versio
 ## Metadata
 - version: %s
 - confidence: low
-- transcript-ref: %s
-- branch: %s`, version, transcriptCommit, branchName)
+- transcript-ref: %s`, version, transcriptCommit)
 	}
 
 	// Skip writing if output is empty (git notes rejects empty content)
@@ -80,14 +78,13 @@ func Run(cfg config.Config, transcriptPath, commitHash, transcriptCommit, versio
 
 // BuildPromptInput constructs the prompt input for distillation.
 // Exported for testing.
-func BuildPromptInput(commitHash, commitSubject, branchName, diffContent, transcriptWindow, transcriptCommit, version string) string {
+func BuildPromptInput(commitHash, commitSubject, diffContent, transcriptWindow, transcriptCommit, version string) string {
 	return fmt.Sprintf(`## Commit
 %s %s
 
 ## Metadata (copy these values exactly into the output Metadata section)
 - version: %s
 - transcript-ref: %s
-- branch: %s
 
 ## Diff
 `+"```diff\n%s\n```"+`
@@ -95,7 +92,7 @@ func BuildPromptInput(commitHash, commitSubject, branchName, diffContent, transc
 ## Transcript (agent session leading to this commit)
 %s`,
 		commitHash, commitSubject,
-		version, transcriptCommit, branchName,
+		version, transcriptCommit,
 		diffContent, transcriptWindow,
 	)
 }

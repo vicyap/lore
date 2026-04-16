@@ -27,15 +27,6 @@ func GetCommitSubject(commitHash string) (string, error) {
 	return runGit("log", "-1", "--format=%s", commitHash)
 }
 
-// GetBranchName returns the current branch name, or "detached" if HEAD is detached.
-func GetBranchName() string {
-	name, err := runGit("symbolic-ref", "--short", "HEAD")
-	if err != nil {
-		return "detached"
-	}
-	return name
-}
-
 // IsInsideWorkTree returns true if the current directory is inside a git work tree.
 func IsInsideWorkTree() bool {
 	_, err := runGit("rev-parse", "--is-inside-work-tree")

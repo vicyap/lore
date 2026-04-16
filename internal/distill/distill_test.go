@@ -9,7 +9,6 @@ func TestBuildPromptInput(t *testing.T) {
 	result := BuildPromptInput(
 		"abc123def012",
 		"fix nil pointer in login handler",
-		"main",
 		"diff --git a/login.go\n-old\n+new",
 		"**User:** Fix the login bug",
 		"deadbeef1234",
@@ -31,10 +30,6 @@ func TestBuildPromptInput(t *testing.T) {
 	if !strings.Contains(result, "transcript-ref: deadbeef1234") {
 		t.Error("expected transcript commit hash in prompt")
 	}
-	if !strings.Contains(result, "branch: main") {
-		t.Error("expected branch name in prompt")
-	}
-
 	// Should contain diff
 	if !strings.Contains(result, "diff --git") {
 		t.Error("expected diff content in prompt")
@@ -55,7 +50,7 @@ func TestBuildPromptInput(t *testing.T) {
 }
 
 func TestBuildPromptInput_EmptyFields(t *testing.T) {
-	result := BuildPromptInput("", "", "detached", "", "(empty transcript)", "", "")
+	result := BuildPromptInput("", "", "", "(empty transcript)", "", "")
 
 	// Should still produce valid structure
 	if !strings.Contains(result, "## Commit") {
