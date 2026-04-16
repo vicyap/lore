@@ -40,14 +40,8 @@ func TestInstalled_FullCycle(t *testing.T) {
 		t.Fatalf("hook failed: exit %d, stderr: %s", exitCode, stderr)
 	}
 
-	// Show should have the note
-	stdout, _, exitCode = runLore(t, dir, "show", commitHash)
-	if exitCode != 0 {
-		t.Fatalf("show failed: exit %d", exitCode)
-	}
-	if !strings.Contains(stdout, "## Decisions") {
-		t.Errorf("expected note in show output, got:\n%s", stdout)
-	}
+	// The note should have been written
+	assertNoteContains(t, dir, commitHash, "## Decisions")
 
 	// Status should show note count
 	stdout, _, exitCode = runLore(t, dir, "status")

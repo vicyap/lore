@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestMergeNotes_AggregatesMultipleNotes(t *testing.T) {
+func TestSquash_AggregatesMultipleNotes(t *testing.T) {
 	// Set up a repo with 3 commits, each with a lore note
 	dir := setupRepoWithNotes(t, 3)
 
@@ -27,8 +27,8 @@ func TestMergeNotes_AggregatesMultipleNotes(t *testing.T) {
 
 	// We can't use --pr (no GitHub), so manually write notes referencing
 	// the old commits and test the aggregation logic directly.
-	// Instead, test that merge-notes with --pr 0 gracefully handles no PR.
-	stdout, _, exitCode := runLore(t, dir, "merge-notes")
+	// Instead, test that squash with --pr 0 gracefully handles no PR.
+	stdout, _, exitCode := runLore(t, dir, "squash")
 
 	if exitCode != 0 {
 		t.Fatalf("expected exit 0, got %d", exitCode)
@@ -58,11 +58,11 @@ func TestMergeNotes_AggregatesMultipleNotes(t *testing.T) {
 	}
 }
 
-func TestMergeNotes_SkipsIfNoteExists(t *testing.T) {
+func TestSquash_SkipsIfNoteExists(t *testing.T) {
 	dir := setupRepoWithNotes(t, 1)
 
 	// HEAD already has a note from setupRepoWithNotes
-	stdout, _, exitCode := runLore(t, dir, "merge-notes")
+	stdout, _, exitCode := runLore(t, dir, "squash")
 
 	if exitCode != 0 {
 		t.Fatalf("expected exit 0, got %d", exitCode)
@@ -76,8 +76,8 @@ func TestMergeNotes_SkipsIfNoteExists(t *testing.T) {
 func TestInit_InstallsWorkflow(t *testing.T) {
 	dir := setupTestRepo(t)
 
-	// Answer yes to skill, yes to workflow
-	stdout, _, exitCode := runLoreWithStdin(t, dir, "y\ny\n", "init")
+	// Answer yes to workflow
+	stdout, _, exitCode := runLoreWithStdin(t, dir, "y\n", "init")
 
 	if exitCode != 0 {
 		t.Fatalf("expected exit 0, got %d\nstdout: %s", exitCode, stdout)
@@ -85,8 +85,8 @@ func TestInit_InstallsWorkflow(t *testing.T) {
 
 	// Verify workflow file exists
 	workflowContent := readFile(t, dir+"/.github/workflows/lore.yml")
-	if !strings.Contains(workflowContent, "lore merge-notes") {
-		t.Error("workflow should contain lore merge-notes step")
+	if !strings.Contains(workflowContent, "lore squash") {
+		t.Error("workflow should contain lore squash step")
 	}
 	if !strings.Contains(workflowContent, "refs/notes/lore") {
 		t.Error("workflow should push refs/notes/lore")
@@ -97,8 +97,8 @@ func TestInit_WorkflowIdempotent(t *testing.T) {
 	dir := setupTestRepo(t)
 
 	// Install twice
-	runLoreWithStdin(t, dir, "y\ny\n", "init")
-	stdout, _, _ := runLoreWithStdin(t, dir, "y\ny\n", "init")
+	runLoreWithStdin(t, dir, "y\n", "init")
+	stdout, _, _ := runLoreWithStdin(t, dir, "y\n", "init")
 
 	if !strings.Contains(stdout, "already exists") || !strings.Contains(stdout, "already installed") {
 		// At least one of the two should say "already"

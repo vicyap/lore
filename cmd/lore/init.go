@@ -22,8 +22,7 @@ func initCmd() *cobra.Command {
 		Long: `Initialize lore in the current git repository. This:
   1. Adds a PostToolUse hook to .claude/settings.json
   2. Creates the lore/transcripts orphan branch
-  3. Configures git to display lore notes in git log
-  4. Optionally installs the /lore skill for Claude Code`,
+  3. Configures git to display lore notes in git log`,
 		RunE: runInit,
 	}
 }
@@ -79,15 +78,6 @@ func runInit(cmd *cobra.Command, args []string) error {
 	// Configure git notes display
 	configureNotesDisplay(cfg.NotesRef)
 
-	// Ask about skill installation
-	if promptYesNo("Install /lore skill for Claude Code?", true) {
-		if err := installSkill(repoRoot); err != nil {
-			fmt.Fprintf(os.Stderr, "  warning: skill install failed: %v\n", err)
-		} else {
-			fmt.Println("  Skill installed")
-		}
-	}
-
 	// Ask about GitHub Actions workflow
 	if promptYesNo("Install GitHub Actions workflow? (pushes notes on merge, handles squash merges)", true) {
 		if err := installWorkflow(repoRoot); err != nil {
@@ -102,7 +92,7 @@ func runInit(cmd *cobra.Command, args []string) error {
 	fmt.Println()
 	fmt.Println("View notes:       git log --notes=lore")
 	fmt.Println("View transcripts: git log lore/transcripts")
-	fmt.Println("Interactive:      lore show (or lore browse)")
+	fmt.Println("Interactive:      lore browse")
 	return nil
 }
 
@@ -118,26 +108,6 @@ func configureNotesDisplay(notesRef string) {
 		return
 	}
 	fmt.Println("  Configured git to display lore notes")
-}
-
-func installSkill(repoRoot string) error {
-	// Detect skills directory
-	skillsDir := filepath.Join(repoRoot, ".claude", "skills")
-	if info, err := os.Stat(filepath.Join(repoRoot, ".agents", "skills")); err == nil && info.IsDir() {
-		skillsDir = filepath.Join(repoRoot, ".agents", "skills")
-	}
-
-	skillDir := filepath.Join(skillsDir, "lore")
-	if err := os.MkdirAll(skillDir, 0o755); err != nil {
-		return err
-	}
-
-	skillContent, err := prompts.SkillDefinition()
-	if err != nil {
-		return fmt.Errorf("read embedded skill: %w", err)
-	}
-
-	return os.WriteFile(filepath.Join(skillDir, "lore.md"), skillContent, 0o644)
 }
 
 func installWorkflow(repoRoot string) error {

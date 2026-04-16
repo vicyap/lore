@@ -10,6 +10,8 @@ import (
 var version = "dev"
 
 func main() {
+	cobra.EnableCommandSorting = false
+
 	rootCmd := &cobra.Command{
 		Use:   "lore",
 		Short: "Capture why code was written, not just what changed",
@@ -18,19 +20,18 @@ and stores it as git notes alongside commits. Full session transcripts
 are preserved on a separate branch for deep investigation.`,
 		Version: version,
 	}
+	rootCmd.CompletionOptions.DisableDefaultCmd = true
 
 	rootCmd.AddCommand(
 		initCmd(),
-		hookCmd(),
-		showCmd(),
-		statusCmd(),
-		pushCmd(),
-		exportCmd(),
 		disableCmd(),
 		browseCmd(),
+		statusCmd(),
+		exportCmd(),
+		squashCmd(),
 		updateCmd(),
 		versionCmd(),
-		mergeNotesCmd(),
+		hookCmd(),
 	)
 
 	if err := rootCmd.Execute(); err != nil {

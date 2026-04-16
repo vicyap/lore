@@ -69,7 +69,7 @@ echo "  lore hook: OK"
 # Verify note
 echo ""
 echo "=== Decision note ==="
-lore show "$COMMIT_HASH"
+git notes --ref=lore show "$COMMIT_HASH"
 echo ""
 
 # Check for expected sections

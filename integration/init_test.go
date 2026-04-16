@@ -94,17 +94,6 @@ func TestInit_PreservesExistingSettings(t *testing.T) {
 	}
 }
 
-func TestInit_WithSkillInstall(t *testing.T) {
-	dir := setupTestRepo(t)
-
-	runLoreWithStdin(t, dir, "y\n", "init")
-
-	skillPath := filepath.Join(dir, ".claude", "skills", "lore", "lore.md")
-	if _, err := os.Stat(skillPath); os.IsNotExist(err) {
-		t.Error("skill file should exist at .claude/skills/lore/lore.md")
-	}
-}
-
 func TestInit_NotGitRepo(t *testing.T) {
 	dir := t.TempDir() // not a git repo
 

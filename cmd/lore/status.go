@@ -29,11 +29,14 @@ func runStatus(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Println("lore status:")
+	hookInstalled, _ := settings.HasHook(repoRoot)
+	if hookInstalled {
+		fmt.Println("lore is enabled in this repository")
+	} else {
+		fmt.Println("lore is NOT enabled in this repository")
+	}
 	fmt.Println()
 
-	// Hook installed?
-	hookInstalled, _ := settings.HasHook(repoRoot)
 	printStatus("PostToolUse hook", hookInstalled)
 
 	// Old hook?

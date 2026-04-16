@@ -12,14 +12,6 @@ func DistillPrompt() []byte {
 	return distillPrompt
 }
 
-//go:embed skill.md
-var skillDefinition []byte
-
-// SkillDefinition returns the lore skill markdown.
-func SkillDefinition() ([]byte, error) {
-	return skillDefinition, nil
-}
-
 //go:embed lore-workflow.yml
 var workflowTemplate []byte
 

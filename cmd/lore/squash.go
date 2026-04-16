@@ -11,11 +11,11 @@ import (
 	"github.com/vicyap/lore/internal/git"
 )
 
-func mergeNotesCmd() *cobra.Command {
+func squashCmd() *cobra.Command {
 	var prNumber int
 
 	cmd := &cobra.Command{
-		Use:   "merge-notes [--pr N]",
+		Use:   "squash [--pr N]",
 		Short: "Aggregate branch notes onto a squash-merged commit",
 		Long: `After a squash merge, the original branch commits' lore notes are
 orphaned because the squash commit has a new hash. This command finds
@@ -25,7 +25,7 @@ the current HEAD.
 Used automatically by the lore GitHub Actions workflow on PR merge.
 Can also be run manually after a local squash merge.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runMergeNotes(prNumber)
+			return runSquash(prNumber)
 		},
 	}
 
@@ -33,7 +33,7 @@ Can also be run manually after a local squash merge.`,
 	return cmd
 }
 
-func runMergeNotes(prNumber int) error {
+func runSquash(prNumber int) error {
 	cfg := config.Load()
 
 	if !git.IsInsideWorkTree() {
