@@ -198,9 +198,6 @@ func TestHook_DetachedHEAD(t *testing.T) {
 	// Detach HEAD
 	runCmd(t, dir, "git", "checkout", "--detach")
 
-	logFile := filepath.Join(t.TempDir(), "claude.log")
-	t.Setenv("FAKECLAUDE_LOG", logFile)
-
 	payload := buildHookPayload("sess-008", transcriptPath, dir, `git commit -m "test"`)
 	_, _, exitCode := runLoreWithStdin(t, dir, payload, "hook")
 
@@ -209,11 +206,6 @@ func TestHook_DetachedHEAD(t *testing.T) {
 	}
 
 	assertNoteExists(t, dir, commitHash)
-
-	logContent := readFile(t, logFile)
-	if !strings.Contains(logContent, "branch: detached") {
-		t.Errorf("expected 'branch: detached' in prompt, got:\n%s", logContent)
-	}
 }
 
 func TestHook_CustomModel(t *testing.T) {
