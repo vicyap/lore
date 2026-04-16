@@ -29,9 +29,14 @@ case "$ARCH" in
     *) echo "error: unsupported architecture: $ARCH" >&2; exit 1 ;;
 esac
 
-# Resolve latest version
+# Resolve latest version by reading the /releases/latest redirect target.
+# We avoid api.github.com because anonymous requests are capped at 60/hour.
 if [ "$VERSION" = "latest" ]; then
-    VERSION="$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" | grep '"tag_name"' | sed 's/.*"v//' | sed 's/".*//')"
+    LOC="$(curl -fsI "https://github.com/${REPO}/releases/latest" \
+        | awk -F': ' 'tolower($1)=="location"{print $2}' \
+        | tr -d '\r\n')"
+    VERSION="${LOC##*/tag/}"
+    VERSION="${VERSION#v}"
     if [ -z "$VERSION" ]; then
         echo "error: could not determine latest version" >&2
         exit 1
