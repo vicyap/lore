@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os/exec"
 	"strings"
+	"time"
 )
 
 // GetCommitHash returns the current HEAD commit hash.
@@ -25,6 +26,24 @@ func GetDiff(commitHash string) (string, error) {
 // GetCommitSubject returns the subject line of a commit.
 func GetCommitSubject(commitHash string) (string, error) {
 	return runGit("log", "-1", "--format=%s", commitHash)
+}
+
+// GetCommitMeta returns the subject and commit timestamp for a commit in a
+// single git invocation.
+func GetCommitMeta(commitHash string) (string, time.Time, error) {
+	out, err := runGit("log", "-1", "--format=%cI%x09%s", commitHash)
+	if err != nil {
+		return "", time.Time{}, err
+	}
+	iso, subject, ok := strings.Cut(out, "\t")
+	if !ok {
+		return "", time.Time{}, fmt.Errorf("unexpected git log output: %q", out)
+	}
+	ts, err := time.Parse(time.RFC3339, iso)
+	if err != nil {
+		return "", time.Time{}, fmt.Errorf("parse commit time %q: %w", iso, err)
+	}
+	return subject, ts, nil
 }
 
 // IsInsideWorkTree returns true if the current directory is inside a git work tree.

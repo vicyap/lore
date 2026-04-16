@@ -3,7 +3,9 @@ package tui
 import (
 	"fmt"
 	"os"
+	"slices"
 	"strings"
+	"time"
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/vicyap/lore/internal/config"
@@ -17,11 +19,18 @@ const (
 	viewDetail
 )
 
+const (
+	hashWidth = 8
+	dateWidth = 16 // len("2006-01-02 15:04")
+	rowGutter = 2  // spaces between columns
+)
+
 // noteItem represents a commit with a lore note.
 type noteItem struct {
 	commitHash string
 	subject    string
 	note       string
+	timestamp  time.Time
 }
 
 // model is the top-level bubbletea model.
@@ -33,10 +42,22 @@ type model struct {
 	viewState viewState
 	width     int
 	height    int
-	scroll    int // scroll offset for detail view
+
+	// detail view state
+	scroll         int
+	noteLines      []string
+	noteMatchLines []int
+	noteMatchIdx   int
+
+	// search
 	search    string
 	searching bool
-	err       error
+
+	// input state
+	lastKey string // tracks prior key for multi-key motions like `gg`
+	toast   string // transient status message (e.g. "copied <hash>")
+
+	err error
 }
 
 // Run launches the TUI.
@@ -69,11 +90,18 @@ func (m model) Init() tea.Cmd {
 	return nil
 }
 
+// clearToastMsg clears any transient status toast.
+type clearToastMsg struct{}
+
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
+		return m, nil
+
+	case clearToastMsg:
+		m.toast = ""
 		return m, nil
 
 	case tea.KeyPressMsg:
@@ -86,8 +114,7 @@ func (m model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	key := msg.String()
 
 	// Global keys
-	switch key {
-	case "ctrl+c":
+	if key == "ctrl+c" {
 		return m, tea.Quit
 	}
 
@@ -95,16 +122,40 @@ func (m model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		return m.handleSearchKey(msg)
 	}
 
+	// Reset multi-key buffer unless the current key is the second half of a
+	// known sequence (currently only `gg`).
+	prevKey := m.lastKey
+	if key != "g" {
+		m.lastKey = ""
+	}
+
 	switch m.viewState {
 	case viewList:
-		return m.handleListKey(key)
+		return m.handleListKey(key, prevKey)
 	case viewDetail:
-		return m.handleDetailKey(key)
+		return m.handleDetailKey(key, prevKey)
 	}
 	return m, nil
 }
 
-func (m model) handleListKey(key string) (tea.Model, tea.Cmd) {
+// pageSize returns the number of rows the list view can display at once.
+func (m model) pageSize() int {
+	const headerLines = 3
+	const footerLines = 3
+	h := m.height - headerLines - footerLines
+	if h < 1 {
+		return 10
+	}
+	return h
+}
+
+func (m model) handleListKey(key, prevKey string) (tea.Model, tea.Cmd) {
+	last := len(m.filtered) - 1
+	if last < 0 {
+		last = 0
+	}
+	page := m.pageSize()
+
 	switch key {
 	case "q":
 		return m, tea.Quit
@@ -113,13 +164,37 @@ func (m model) handleListKey(key string) (tea.Model, tea.Cmd) {
 			m.cursor--
 		}
 	case "down", "j":
-		if m.cursor < len(m.filtered)-1 {
+		if m.cursor < last {
 			m.cursor++
 		}
+	case "g":
+		if prevKey == "g" {
+			m.cursor = 0
+			m.lastKey = ""
+		} else {
+			m.lastKey = "g"
+		}
+	case "G", "end":
+		m.cursor = last
+	case "home":
+		m.cursor = 0
+	case "ctrl+d":
+		m.cursor = min(last, m.cursor+page/2)
+	case "ctrl+u":
+		m.cursor = max(0, m.cursor-page/2)
+	case "ctrl+f", "pgdown":
+		m.cursor = min(last, m.cursor+page)
+	case "ctrl+b", "pgup":
+		m.cursor = max(0, m.cursor-page)
 	case "enter":
 		if len(m.filtered) > 0 {
 			m.viewState = viewDetail
 			m.scroll = 0
+			m.prepareNoteMatches()
+			if len(m.noteMatchLines) > 0 {
+				m.scroll = m.noteMatchLines[0]
+				m.noteMatchIdx = 0
+			}
 		}
 	case "/":
 		m.searching = true
@@ -130,21 +205,73 @@ func (m model) handleListKey(key string) (tea.Model, tea.Cmd) {
 			m.filtered = m.items
 			m.cursor = 0
 		}
+	case "y":
+		if len(m.filtered) > 0 {
+			hash := m.filtered[m.cursor].commitHash
+			m.toast = "copied " + hash[:min(12, len(hash))]
+			return m, tea.Batch(tea.SetClipboard(hash), clearToastAfter(1500*time.Millisecond))
+		}
 	}
 	return m, nil
 }
 
-func (m model) handleDetailKey(key string) (tea.Model, tea.Cmd) {
+func (m model) handleDetailKey(key, prevKey string) (tea.Model, tea.Cmd) {
+	last := len(m.noteLines) - 1
+	if last < 0 {
+		last = 0
+	}
+	page := m.pageSize()
+
 	switch key {
 	case "q", "escape":
+		// Intentionally do NOT reset m.cursor or m.search so returning to the
+		// list preserves selection and active filter.
 		m.viewState = viewList
 		m.scroll = 0
+		m.noteLines = nil
+		m.noteMatchLines = nil
+		m.noteMatchIdx = 0
 	case "up", "k":
 		if m.scroll > 0 {
 			m.scroll--
 		}
 	case "down", "j":
-		m.scroll++
+		if m.scroll < last {
+			m.scroll++
+		}
+	case "g":
+		if prevKey == "g" {
+			m.scroll = 0
+			m.lastKey = ""
+		} else {
+			m.lastKey = "g"
+		}
+	case "G", "end":
+		m.scroll = last
+	case "home":
+		m.scroll = 0
+	case "ctrl+d":
+		m.scroll = min(last, m.scroll+page/2)
+	case "ctrl+u":
+		m.scroll = max(0, m.scroll-page/2)
+	case "ctrl+f", "pgdown", " ":
+		m.scroll = min(last, m.scroll+page)
+	case "ctrl+b", "pgup":
+		m.scroll = max(0, m.scroll-page)
+	case "n":
+		if len(m.noteMatchLines) > 0 {
+			m.noteMatchIdx = (m.noteMatchIdx + 1) % len(m.noteMatchLines)
+			m.scroll = m.noteMatchLines[m.noteMatchIdx]
+		}
+	case "N":
+		if len(m.noteMatchLines) > 0 {
+			m.noteMatchIdx = (m.noteMatchIdx - 1 + len(m.noteMatchLines)) % len(m.noteMatchLines)
+			m.scroll = m.noteMatchLines[m.noteMatchIdx]
+		}
+	case "y":
+		hash := m.filtered[m.cursor].commitHash
+		m.toast = "copied " + hash[:min(12, len(hash))]
+		return m, tea.Batch(tea.SetClipboard(hash), clearToastAfter(1500*time.Millisecond))
 	}
 	return m, nil
 }
@@ -187,6 +314,34 @@ func (m *model) applyFilter() {
 	m.cursor = 0
 }
 
+// prepareNoteMatches renders the current note's lines and records which lines
+// contain the active search query (case-insensitive).
+func (m *model) prepareNoteMatches() {
+	if m.cursor >= len(m.filtered) {
+		m.noteLines = nil
+		m.noteMatchLines = nil
+		m.noteMatchIdx = 0
+		return
+	}
+	rendered := renderMarkdown(m.filtered[m.cursor].note, m.width-4)
+	m.noteLines = strings.Split(rendered, "\n")
+	m.noteMatchLines = nil
+	m.noteMatchIdx = 0
+	if m.search == "" {
+		return
+	}
+	query := strings.ToLower(m.search)
+	for idx, line := range m.noteLines {
+		if strings.Contains(strings.ToLower(line), query) {
+			m.noteMatchLines = append(m.noteMatchLines, idx)
+		}
+	}
+}
+
+func clearToastAfter(d time.Duration) tea.Cmd {
+	return tea.Tick(d, func(time.Time) tea.Msg { return clearToastMsg{} })
+}
+
 func (m model) View() tea.View {
 	if m.err != nil {
 		return tea.NewView(fmt.Sprintf("Error: %v\n\nPress q to quit.", m.err))
@@ -209,7 +364,16 @@ func (m model) renderList() string {
 	var buf strings.Builder
 
 	// Header
-	buf.WriteString("  lore — decision notes\n")
+	header := "  lore — decision notes"
+	if len(m.filtered) > 0 {
+		header += fmt.Sprintf("  (%d/%d)", m.cursor+1, len(m.filtered))
+	} else {
+		header += fmt.Sprintf("  (0/%d)", len(m.items))
+	}
+	if m.toast != "" {
+		header += "  — " + m.toast
+	}
+	buf.WriteString(header + "\n")
 	if m.search != "" || m.searching {
 		buf.WriteString(fmt.Sprintf("  search: %s", m.search))
 		if m.searching {
@@ -219,13 +383,7 @@ func (m model) renderList() string {
 	}
 	buf.WriteString("\n")
 
-	// Available height for items
-	headerLines := 3
-	footerLines := 3
-	availableHeight := m.height - headerLines - footerLines
-	if availableHeight < 1 {
-		availableHeight = 10
-	}
+	availableHeight := m.pageSize()
 
 	// Calculate visible window
 	start := 0
@@ -237,27 +395,35 @@ func (m model) renderList() string {
 		end = len(m.filtered)
 	}
 
+	// cursor(2) + hash(8) + gutter(2) + date(16) + gutter(2) = 30 chars of fixed prefix
+	fixedPrefix := 2 + hashWidth + rowGutter + dateWidth + rowGutter
+	subjectWidth := m.width - fixedPrefix
+	if subjectWidth < 20 {
+		subjectWidth = 40
+	}
+
 	for idx := start; idx < end; idx++ {
 		item := m.filtered[idx]
 		cursor := "  "
 		if idx == m.cursor {
 			cursor = "> "
 		}
-		// Truncate subject to fit width
 		subject := item.subject
-		maxWidth := m.width - 20
-		if maxWidth < 20 {
-			maxWidth = 40
+		if len(subject) > subjectWidth {
+			subject = subject[:subjectWidth-3] + "..."
 		}
-		if len(subject) > maxWidth {
-			subject = subject[:maxWidth-3] + "..."
-		}
-		buf.WriteString(fmt.Sprintf("%s%s  %s\n", cursor, item.commitHash[:min(8, len(item.commitHash))], subject))
+		date := item.timestamp.Local().Format("2006-01-02 15:04")
+		buf.WriteString(fmt.Sprintf("%s%s  %s  %s\n",
+			cursor,
+			item.commitHash[:min(hashWidth, len(item.commitHash))],
+			date,
+			subject,
+		))
 	}
 
 	// Footer
 	buf.WriteString("\n")
-	buf.WriteString("  j/k: navigate  enter: view  /: search  q: quit\n")
+	buf.WriteString("  j/k · gg/G · ctrl-d/u · /: search · y: copy hash · enter: view · q: quit\n")
 
 	return buf.String()
 }
@@ -270,14 +436,25 @@ func (m model) renderDetail() string {
 	item := m.filtered[m.cursor]
 
 	var buf strings.Builder
-	buf.WriteString(fmt.Sprintf("  %s — %s\n\n", item.commitHash[:min(12, len(item.commitHash))], item.subject))
+	header := fmt.Sprintf("  %s  %s  —  %s",
+		item.commitHash[:min(12, len(item.commitHash))],
+		item.timestamp.Local().Format("2006-01-02 15:04"),
+		item.subject,
+	)
+	if m.toast != "" {
+		header += "  (" + m.toast + ")"
+	}
+	if len(m.noteMatchLines) > 0 {
+		header += fmt.Sprintf("  [match %d/%d]", m.noteMatchIdx+1, len(m.noteMatchLines))
+	}
+	buf.WriteString(header + "\n\n")
 
-	// Render markdown with glamour
-	rendered := renderMarkdown(item.note, m.width-4)
+	lines := m.noteLines
+	if lines == nil {
+		rendered := renderMarkdown(item.note, m.width-4)
+		lines = strings.Split(rendered, "\n")
+	}
 
-	lines := strings.Split(rendered, "\n")
-
-	// Apply scroll
 	start := m.scroll
 	if start >= len(lines) {
 		start = max(0, len(lines)-1)
@@ -295,7 +472,7 @@ func (m model) renderDetail() string {
 		buf.WriteString("  " + line + "\n")
 	}
 
-	buf.WriteString("\n  j/k: scroll  q/esc: back\n")
+	buf.WriteString("\n  j/k · gg/G · ctrl-d/u · n/N: next match · y: copy hash · q/esc: back\n")
 
 	return buf.String()
 }
@@ -331,13 +508,23 @@ func loadNotes(cfg config.Config) ([]noteItem, error) {
 			continue
 		}
 
-		subject, _ := git.GetCommitSubject(commitHash)
+		subject, ts, err := git.GetCommitMeta(commitHash)
+		if err != nil {
+			// Commit missing or unreadable — skip (matches prior behaviour).
+			continue
+		}
 		items = append(items, noteItem{
 			commitHash: commitHash,
 			subject:    subject,
 			note:       note,
+			timestamp:  ts,
 		})
 	}
+
+	slices.SortFunc(items, func(a, b noteItem) int {
+		return b.timestamp.Compare(a.timestamp) // most recent first
+	})
+
 	return items, nil
 }
 
