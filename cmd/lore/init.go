@@ -78,8 +78,14 @@ func runInit(cmd *cobra.Command, args []string) error {
 	// Configure git notes display
 	configureNotesDisplay(cfg.NotesRef)
 
-	// Ask about GitHub Actions workflow
-	if promptYesNo("Install GitHub Actions workflow? (pushes notes on merge, handles squash merges)", true) {
+	// Configure remote.origin.fetch so future clones/fetches pull notes down
+	configureNotesFetchRefspec()
+
+	// Ask about GitHub Actions workflow — skip the prompt if already installed
+	workflowPath := filepath.Join(repoRoot, ".github", "workflows", "lore.yml")
+	if _, err := os.Stat(workflowPath); err == nil {
+		fmt.Println("  GitHub Actions workflow already installed at .github/workflows/lore.yml")
+	} else if promptYesNo("Install GitHub Actions workflow? (pushes notes on merge, handles squash merges)", true) {
 		if err := installWorkflow(repoRoot); err != nil {
 			fmt.Fprintf(os.Stderr, "  warning: workflow install failed: %v\n", err)
 		} else {
@@ -115,14 +121,32 @@ func installWorkflow(repoRoot string) error {
 	if err := os.MkdirAll(workflowDir, 0o755); err != nil {
 		return err
 	}
-
 	workflowPath := filepath.Join(workflowDir, "lore.yml")
-	if _, err := os.Stat(workflowPath); err == nil {
-		fmt.Println("  Workflow already exists at .github/workflows/lore.yml")
-		return nil
+	return os.WriteFile(workflowPath, prompts.WorkflowTemplate(), 0o644)
+}
+
+// configureNotesFetchRefspec adds refs/notes/* to remote.origin.fetch so that
+// `git fetch` / `git pull` pulls lore notes down on fresh clones. Idempotent.
+func configureNotesFetchRefspec() {
+	// Skip if no origin remote exists (freshly `git init`'d repo, no upstream).
+	if _, err := runGitConfig("--get", "remote.origin.url"); err != nil {
+		fmt.Println("  No origin remote — skipping fetch refspec config")
+		return
 	}
 
-	return os.WriteFile(workflowPath, prompts.WorkflowTemplate(), 0o644)
+	const refspec = "+refs/notes/*:refs/notes/*"
+	existing, _ := runGitConfig("--get-all", "remote.origin.fetch")
+	if strings.Contains(existing, refspec) {
+		fmt.Println("  Git notes fetch refspec already configured")
+		return
+	}
+
+	cmd := exec.Command("git", "config", "--add", "remote.origin.fetch", refspec)
+	if err := cmd.Run(); err != nil {
+		fmt.Fprintf(os.Stderr, "  warning: could not configure remote.origin.fetch: %v\n", err)
+		return
+	}
+	fmt.Println("  Configured remote.origin.fetch for refs/notes/*")
 }
 
 func runGitConfig(args ...string) (string, error) {

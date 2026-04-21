@@ -36,7 +36,7 @@ Go CLI built with cobra. The hook fires on `git commit` during a Claude Code ses
 
 ### Package structure
 
-- `cmd/lore/` -- CLI entry point and cobra commands (init, hook, show, status, push, export, disable, tui)
+- `cmd/lore/` -- CLI entry point and cobra commands (init, hook, status, browse, export, squash, pull, disable, update, version)
 - `internal/config/` -- env var configuration
 - `internal/git/` -- git plumbing (orphan branch ops), notes CRUD, helpers
 - `internal/transcript/` -- JSONL parsing and windowing (port of the original Python extract_window.py)

@@ -104,6 +104,73 @@ func TestInit_NotGitRepo(t *testing.T) {
 	}
 }
 
+func TestInit_ConfiguresFetchRefspec(t *testing.T) {
+	dir := setupTestRepo(t)
+	bareOrigin := t.TempDir()
+	runCmd(t, bareOrigin, "git", "init", "--bare")
+	runCmd(t, dir, "git", "remote", "add", "origin", bareOrigin)
+
+	_, _, exitCode := runLoreWithStdin(t, dir, "n\n", "init")
+	if exitCode != 0 {
+		t.Fatalf("expected exit 0, got %d", exitCode)
+	}
+
+	out := runCmdOutput(t, dir, "git", "config", "--get-all", "remote.origin.fetch")
+	if !strings.Contains(out, "+refs/notes/*:refs/notes/*") {
+		t.Errorf("remote.origin.fetch should include +refs/notes/*:refs/notes/*, got:\n%s", out)
+	}
+
+	// Second init must be idempotent — no duplicate refspec entry.
+	runLoreWithStdin(t, dir, "n\n", "init")
+	out = runCmdOutput(t, dir, "git", "config", "--get-all", "remote.origin.fetch")
+	if count := strings.Count(out, "+refs/notes/*:refs/notes/*"); count != 1 {
+		t.Errorf("expected exactly 1 notes refspec entry, found %d:\n%s", count, out)
+	}
+}
+
+func TestInit_SkipsFetchRefspecWithoutOrigin(t *testing.T) {
+	dir := setupTestRepo(t)
+
+	stdout, _, exitCode := runLoreWithStdin(t, dir, "n\n", "init")
+	if exitCode != 0 {
+		t.Fatalf("expected exit 0, got %d", exitCode)
+	}
+	if !strings.Contains(stdout, "No origin remote") {
+		t.Errorf("expected 'No origin remote' message when no origin configured, got:\n%s", stdout)
+	}
+}
+
+func TestInit_SkipsWorkflowPromptWhenInstalled(t *testing.T) {
+	dir := setupTestRepo(t)
+
+	// Pre-install the workflow so the prompt should be skipped.
+	if err := os.MkdirAll(filepath.Join(dir, ".github", "workflows"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, ".github", "workflows", "lore.yml"), []byte("name: lore\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Deliberately pass NO stdin — if the prompt fires and tries to read,
+	// we'd get an empty answer (and defaultYes=true would overwrite the file).
+	stdout, _, exitCode := runLore(t, dir, "init")
+	if exitCode != 0 {
+		t.Fatalf("expected exit 0, got %d\nstdout: %s", exitCode, stdout)
+	}
+	if !strings.Contains(stdout, "workflow already installed") {
+		t.Errorf("expected 'workflow already installed' in output, got:\n%s", stdout)
+	}
+	if strings.Contains(stdout, "Install GitHub Actions workflow?") {
+		t.Errorf("prompt should have been skipped, but question was printed:\n%s", stdout)
+	}
+
+	// The pre-existing placeholder content must be preserved.
+	content := readFile(t, filepath.Join(dir, ".github", "workflows", "lore.yml"))
+	if strings.TrimSpace(content) != "name: lore" {
+		t.Errorf("existing workflow content should be preserved, got:\n%s", content)
+	}
+}
+
 func TestInit_ReplacesOldHook(t *testing.T) {
 	dir := setupTestRepo(t)
 

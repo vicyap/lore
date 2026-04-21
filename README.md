@@ -41,7 +41,7 @@ cd your-project
 lore init
 ```
 
-This adds a PostToolUse hook to `.claude/settings.json`, creates the orphan branch, and configures git notes display.
+This adds a PostToolUse hook to `.claude/settings.json`, creates the orphan branch, configures git notes display, and adds `+refs/notes/*:refs/notes/*` to `remote.origin.fetch` so future `git fetch`/`git pull` brings lore notes down automatically.
 
 ## Disable
 
@@ -63,6 +63,7 @@ lore status     # check if lore is enabled in this repo
 lore browse     # interactive browser
 lore export     # export as JSONL to stdout
 lore export --format md --output notes.md
+lore pull       # fetch notes + transcripts from origin (useful on fresh clones)
 ```
 
 ### Using git directly
